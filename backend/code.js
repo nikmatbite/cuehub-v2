@@ -26,28 +26,6 @@ var ROUTES = {
   'sessionGame.update':         function (p) { return GameService.sessionUpdate(p); },
   'sessionGame.updateStatus':   function (p) { return GameService.sessionUpdateStatus(p); },
 
-  'match.create':           function (p) { return MatchService.create(p); },
-  'match.getAll':           function (p) { return MatchService.getAll(p); },
-  'match.getById':          function (p) { return MatchService.getById(p); },
-  'match.start':            function (p) { return MatchService.start(p); },
-  'match.finish':           function (p) { return MatchService.finish(p); },
-  'match.cancel':           function (p) { return MatchService.cancel(p); },
-
-  'match.addScore':         function (p) { return MatchService.addScore(p); },
-  'match.getScores':        function (p) { return MatchService.getScores(p); },
-
-  'queue.add':              function (p) { return MatchService.queueAdd(p); },
-  'queue.get':              function (p) { return MatchService.queueGet(p); },
-  'queue.remove':           function (p) { return MatchService.queueRemove(p); },
-  'queue.reorder':          function (p) { return MatchService.queueReorder(p); },
-
-  'match.generateRotation': function (p) { return MatchService.generateRotation(p); },
-
-  'statistics.compute':        function (p) { return StatisticsService.compute(p); },
-  'statistics.getSession':     function (p) { return StatisticsService.getSessionStats(p); },
-  'statistics.getPlayer':      function (p) { return StatisticsService.getPlayerStats(p); },
-  'statistics.getAllPlayers':  function (p) { return StatisticsService.getAllPlayerStats(); },
-
   'match.queueAdd':          function (p) { return MatchService.queueAdd(p); },
   'match.queueGet':          function (p) { return MatchService.queueGet(p); },
   'match.queueRemove':       function (p) { return MatchService.queueRemove(p); },

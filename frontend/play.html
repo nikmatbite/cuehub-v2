@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="blue">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CueHub</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- TOPBAR -->
+  <div class="topbar" id="play-topbar">
+    <button class="topbar-btn d-none" id="btn-back" aria-label="Back">
+      <i class="ti ti-arrow-left"></i>
+    </button>
+    <span class="topbar-title" id="play-topbar-title">—</span>
+    <span class="badge-status badge-warning d-none" id="play-topbar-badge" data-lang="SESSION_ONGOING"></span>
+  </div>
+
+  <!-- CONTENT AREA -->
+  <div class="app-content" id="play-content">
+
+    <!-- ===== LOADING STATE ===== -->
+    <div id="play-loading" class="empty-state" style="padding-top:3rem;">
+      <div class="spinner-border" style="width:1.5rem;height:1.5rem;color:var(--color-primary);"></div>
+    </div>
+
+    <!-- ===== MATCH AREA (diisi JS) ===== -->
+    <div id="play-match-area" class="d-none"></div>
+
+  </div>
+
+  <!-- BOTTOM ACTION BAR -->
+  <div id="play-actions" class="d-none" style="padding:.75rem 1rem;border-top:1px solid var(--color-border);background:var(--color-surface);display:flex;gap:.5rem;">
+    <!-- diisi JS -->
+  </div>
+
+</div>
+<!-- /app-shell -->
+
+<!-- ===================== BOTTOM SHEET: PEMENANG MATCH ===================== -->
+<div class="ch-overlay d-none" id="winner-overlay">
+  <div class="ch-sheet">
+    <div class="ch-sheet-handle"></div>
+    <div class="ch-sheet-title" data-lang="PLAY_PICK_WINNER"></div>
+    <div id="winner-options" style="display:flex;flex-direction:column;gap:.5rem;margin-bottom:.75rem;">
+      <!-- diisi JS -->
+    </div>
+    <button class="btn-ch-outline" id="btn-cancel-winner">
+      <span data-lang="CANCEL"></span>
+    </button>
+  </div>
+</div>
+
+<!-- ===================== BOTTOM SHEET: INPUT RANKING (Singapore/Custom) ===================== -->
+<div class="ch-overlay d-none" id="ranking-overlay">
+  <div class="ch-sheet">
+    <div class="ch-sheet-handle"></div>
+    <div class="ch-sheet-title" data-lang="PLAY_INPUT_RANKING"></div>
+    <p style="font-size:.8rem;color:var(--color-text-secondary);margin-bottom:.75rem;" data-lang="PLAY_RANKING_HINT"></p>
+    <div id="ranking-list" style="display:flex;flex-direction:column;gap:.4rem;margin-bottom:.75rem;">
+      <!-- diisi JS — drag order atau tap untuk set ranking -->
+    </div>
+    <div id="ranking-error" class="ch-error d-none"></div>
+    <div style="display:flex;gap:.5rem;margin-top:.5rem;">
+      <button class="btn-ch-outline" style="flex:1;" id="btn-cancel-ranking">
+        <span data-lang="CANCEL"></span>
+      </button>
+      <button class="btn-ch-primary" style="flex:1;" id="btn-confirm-ranking">
+        <span class="btn-label" data-lang="PLAY_CONFIRM_RESULT"></span>
+        <span class="btn-spinner spinner-border spinner-border-sm d-none"></span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== BOTTOM SHEET: END GAME RINGKASAN ===================== -->
+<div class="ch-overlay d-none" id="summary-overlay">
+  <div class="ch-sheet">
+    <div class="ch-sheet-handle"></div>
+    <div class="ch-sheet-title" data-lang="PLAY_GAME_SUMMARY"></div>
+    <div id="summary-content" style="margin-bottom:.75rem;">
+      <!-- diisi JS -->
+    </div>
+    <div style="display:flex;gap:.5rem;">
+      <button class="btn-ch-outline" style="flex:1;" id="btn-close-summary">
+        <span data-lang="PLAY_CONTINUE"></span>
+      </button>
+      <button class="btn-ch-danger" style="flex:1;" id="btn-end-session">
+        <i class="ti ti-door-exit"></i>
+        <span data-lang="PLAY_END_SESSION"></span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== BOTTOM SHEET: EDIT QUEUE (King of Table) ===================== -->
+<div class="ch-overlay d-none" id="queue-overlay">
+  <div class="ch-sheet">
+    <div class="ch-sheet-handle"></div>
+    <div class="ch-sheet-title" data-lang="PLAY_QUEUE_TITLE"></div>
+    <div id="queue-list" style="margin-bottom:.75rem;">
+      <!-- diisi JS -->
+    </div>
+    <button class="btn-ch-primary" id="btn-close-queue">
+      <span data-lang="PLAY_DONE"></span>
+    </button>
+  </div>
+</div>
+
+<!-- ===================== BOTTOM SHEET: TOURNAMENT BRACKET ===================== -->
+<div class="ch-overlay d-none" id="bracket-overlay">
+  <div class="ch-sheet" style="max-height:85vh;overflow-y:auto;">
+    <div class="ch-sheet-handle"></div>
+    <div class="ch-sheet-title" data-lang="PLAY_BRACKET_TITLE"></div>
+    <div id="bracket-content">
+      <!-- diisi JS -->
+    </div>
+    <button class="btn-ch-outline" style="margin-top:.75rem;" id="btn-close-bracket">
+      <span data-lang="PLAY_CLOSE"></span>
+    </button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="js/lang.js"></script>
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+<script src="js/play.js"></script>
+</body>
+</html>

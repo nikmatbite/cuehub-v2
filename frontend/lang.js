@@ -115,7 +115,7 @@ var STRINGS = {
 
     // Confirm & feedback
     CONFIRM_LOGOUT:       'Yakin ingin keluar?',
-    CONFIRM_END_SESSION:  'Yakin mengakhiri sesi? Statistik akan dihitung.',
+    CONFIRM_END_SESSION:  'Yakin akhiri sesi?',
     CONFIRM_DELETE:       'Yakin ingin menghapus?',
     YES:                  'Ya',
     NO:                   'Tidak',
@@ -129,7 +129,34 @@ var STRINGS = {
     // Validasi
     FIELD_REQUIRED:       'Field ini wajib diisi.',
     MIN_PLAYERS:          'Pilih minimal 2 pemain.',
-    INSUFFICIENT_PLAYERS: 'Pemain tidak cukup untuk mode ini.'
+    INSUFFICIENT_PLAYERS: 'Pemain tidak cukup untuk mode ini.',
+
+    PLAY_PICK_WINNER:       'Pilih Pemenang',
+    PLAY_WIN_LABEL:         'menang',
+    PLAY_INPUT_RANKING:     'Input Ranking',
+    PLAY_RANKING_HINT:      'Atur urutan dari peringkat 1 (terbaik) ke bawah menggunakan tombol panah.',
+    PLAY_CONFIRM_RESULT:    'Konfirmasi Hasil',
+    PLAY_GAME_SUMMARY:      'Ringkasan Game',
+    PLAY_CONTINUE:          'Lanjut Main',
+    PLAY_END_SESSION:       'End Session',
+    PLAY_END_GAME:          'End Game',
+    PLAY_QUEUE_TITLE:       'Antrian Pemain',
+    PLAY_QUEUE:             'Antrian',
+    PLAY_QUEUE_EMPTY:       'Belum ada pemain dalam antrian.',
+    PLAY_DONE:              'Selesai',
+    PLAY_BRACKET_TITLE:     'Bracket Turnamen',
+    PLAY_BRACKET:           'Bracket',
+    PLAY_CLOSE:             'Tutup',
+    PLAY_CONFIRM_END_GAME:  'Akhiri game ini?',
+    PLAY_CONFIRM_BACK:      'Kembali ke pilih mode? Sesi game ini akan dibatalkan.',
+    PLAY_SINGAPORE_HINT:    'Ketuk "Input Ranking" setelah ronde selesai untuk mencatat hasil.',
+    PLAY_TEAM_WIN:          'Tim',
+    PLAY_CONFIRM_WIN_TITLE: 'Konfirmasi Pemenang',
+    PLAY_SUMMARY_MODE:      'Mode',
+    PLAY_SUMMARY_TOTAL:     'Total Match',
+    PLAY_SUMMARY_TOP:       'Pemenang Terbanyak',
+    PLAY_SUMMARY_STREAK:    'Streak Terpanjang',
+    PLAY_RETRY:             'Coba Lagi'
   },
 
   en: {
@@ -248,7 +275,7 @@ var STRINGS = {
 
     // Confirm & feedback
     CONFIRM_LOGOUT:       'Are you sure you want to sign out?',
-    CONFIRM_END_SESSION:  'End session? Statistics will be calculated.',
+    CONFIRM_END_SESSION:  'End session?',
     CONFIRM_DELETE:       'Are you sure you want to delete?',
     YES:                  'Yes',
     NO:                   'No',
@@ -262,7 +289,34 @@ var STRINGS = {
     // Validasi
     FIELD_REQUIRED:       'This field is required.',
     MIN_PLAYERS:          'Select at least 2 players.',
-    INSUFFICIENT_PLAYERS: 'Not enough players for this mode.'
+    INSUFFICIENT_PLAYERS: 'Not enough players for this mode.',
+
+    PLAY_PICK_WINNER:       'Pick Winner',
+    PLAY_WIN_LABEL:         'wins',
+    PLAY_INPUT_RANKING:     'Input Ranking',
+    PLAY_RANKING_HINT:      'Arrange players from rank 1 (best) downward using the arrow buttons.',
+    PLAY_CONFIRM_RESULT:    'Confirm Result',
+    PLAY_GAME_SUMMARY:      'Game Summary',
+    PLAY_CONTINUE:          'Continue Playing',
+    PLAY_END_SESSION:       'End Session',
+    PLAY_END_GAME:          'End Game',
+    PLAY_QUEUE_TITLE:       'Player Queue',
+    PLAY_QUEUE:             'Queue',
+    PLAY_QUEUE_EMPTY:       'No players in queue yet.',
+    PLAY_DONE:              'Done',
+    PLAY_BRACKET_TITLE:     'Tournament Bracket',
+    PLAY_BRACKET:           'Bracket',
+    PLAY_CLOSE:             'Close',
+    PLAY_CONFIRM_END_GAME:  'End this game?',
+    PLAY_CONFIRM_BACK:      'Go back to mode selection? This game session will be cancelled.',
+    PLAY_SINGAPORE_HINT:    'Tap "Input Ranking" after the round ends to record results.',
+    PLAY_TEAM_WIN:          'Team',
+    PLAY_CONFIRM_WIN_TITLE: 'Confirm Winner',
+    PLAY_SUMMARY_MODE:      'Mode',
+    PLAY_SUMMARY_TOTAL:     'Total Matches',
+    PLAY_SUMMARY_TOP:       'Top Winner',
+    PLAY_SUMMARY_STREAK:    'Longest Streak',
+    PLAY_RETRY:             'Try Again'
   }
 };
 
