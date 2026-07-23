@@ -281,11 +281,18 @@
       var badgeCls  = statusBadgeClass(s.status);
       var badgeLbl  = getLang('SESSION_' + s.status.toUpperCase()) || s.status;
       html += '<div class="ch-card">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-          '<span style="font-size:.875rem;font-weight:600;">' + esc(s.title) + '</span>' +
-          '<span class="badge-status ' + badgeCls + '">' + badgeLbl + '</span>' +
+        '<div style="display:flex;align-items:center;gap:.625rem;">' +
+          '<div style="width:2rem;height:2rem;border-radius:var(--radius-sm);background:var(--color-surface-2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
+            '<i class="ti ti-ball-billiard" style="font-size:1rem;color:var(--color-primary);"></i>' +
+          '</div>' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+              '<span style="font-size:.875rem;font-weight:600;">' + esc(s.title) + '</span>' +
+              '<span class="badge-status ' + badgeCls + '">' + badgeLbl + '</span>' +
+            '</div>' +
+            '<div style="font-size:.75rem;color:var(--color-text-secondary);margin-top:3px;">' + formatDate(s.date) + '</div>' +
+          '</div>' +
         '</div>' +
-        '<div style="font-size:.75rem;color:var(--color-text-secondary);margin-top:3px;">' + formatDate(s.date) + '</div>' +
       '</div>';
     });
     listEl.innerHTML = html;

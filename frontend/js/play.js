@@ -93,7 +93,10 @@
 
     Api.match.getAll(sessionGameId)
       .then(function (matches) {
-        allMatches = matches || [];
+        allMatches = (matches || []).map(function (m) {
+          if (!m.match_players && m.players) m.match_players = m.players;
+          return m;
+        });
 
         // Cari match yang ongoing
         var ongoing = findOngoingMatch(allMatches);
@@ -135,6 +138,9 @@
         return Api.match.start(data.match_id);
       })
       .then(function (data) {
+        if (!data.match_players && data.players) {
+          data.match_players = data.players;
+        }
         currentMatch = data;
         isSubmittingResult = false;
         renderMatch(currentMatch);
@@ -149,6 +155,10 @@
   // RENDER MATCH — router berdasarkan mode
   // ============================================================
   function renderMatch(match) {
+    if (!match.match_players && match.players) {
+      match.match_players = match.players;
+    }
+
     hidePlayLoading();
     matchArea.classList.remove('d-none');
     actionsBar.classList.remove('d-none');
@@ -924,7 +934,10 @@
         return Api.match.getAll(sessionGameId);
       })
       .then(function (matches) {
-        allMatches = matches || [];
+        allMatches = (matches || []).map(function (m) {
+          if (!m.match_players && m.players) m.match_players = m.players;
+          return m;
+        });
         hideLoading();
         isSubmittingResult = false;
 
