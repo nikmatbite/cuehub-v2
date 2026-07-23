@@ -155,12 +155,12 @@
     }
     if (!validateEmail(email)) {
       console.log("GAGAL: EMAIL");
-      setError(regError, getLang('MISSING_FIELD'));
+      setError(regError, getLang('INVALID_EMAIL'));
       return false;
     }
     if (pass.length < 6) {
       console.log("GAGAL: PASSWORD");
-      setError(regError, getLang('MISSING_FIELD'));
+      setError(regError, getLang('PASSWORD_MIN_6'));
       return false;
     }
     return true;
