@@ -58,8 +58,8 @@
   var queueListEl    = document.getElementById('queue-list');
 
   // Sheet: bracket
-  var bracketOverlay  = document.getElementById('bracket-overlay');
-  var bracketContent  = document.getElementById('bracket-content');
+  var bracketOverlay = document.getElementById('bracket-overlay');
+  var bracketContent = document.getElementById('bracket-content');
 
   // ============================================================
   // MODE LABELS
@@ -74,6 +74,19 @@
     custom:        'Custom'
   };
 
+  function makeAvatar(name, size) {
+    // Coba pakai fungsi global dari app.js jika ada
+    if (typeof window.makeAvatar === 'function') {
+      return window.makeAvatar(name, size);
+    }
+    // Fallback inline
+    var initial = (name || '?').charAt(0).toUpperCase();
+    var cls = 'avatar' + (size === 'sm' ? ' avatar-sm' : '');
+    return '<div class="' + cls + '">' + esc(initial) + '</div>';
+  }
+
+  var ICON_END_GAME = '<i class="ti ti-square-rounded-filled"></i>';
+
   // ============================================================
   // INIT
   // ============================================================
@@ -81,6 +94,12 @@
     topbarTitle.textContent = MODE_LABELS[gameMode] || gameMode;
     topbarBadge.classList.remove('d-none');
     applyTheme(getCurrentTheme());
+    if (!players || players.length === 0) {
+      hidePlayLoading();
+      showMatchError('Data pemain tidak ditemukan. Kembali dan pilih pemain ulang.');
+      btnBack.classList.remove('d-none');
+      return;
+    }
 
     loadSessionGame();
   }
@@ -158,6 +177,11 @@
     if (!match.match_players && match.players) {
       match.match_players = match.players;
     }
+    if (!match.match_players || match.match_players.length === 0) {
+      match.match_players = players.map(function (p) {
+        return { player_id: p.player_id, team: p.team || null, ranking: null };
+      });
+    }
 
     hidePlayLoading();
     matchArea.classList.remove('d-none');
@@ -166,14 +190,29 @@
     updateBackBtn();
 
     switch (gameMode) {
-      case 'duel':        renderDuel(match);       break;
-      case 'king_of_table': renderKing(match);     break;
-      case 'team_battle': renderTeamBattle(match); break;
-      case 'singapore':   renderSingapore(match);  break;
-      case 'tournament':  renderTournament(match); break;
-      case 'round_robin': renderRoundRobin(match); break;
-      case 'custom':      renderCustom(match);     break;
-      default:            renderDuel(match);
+      case 'duel':          renderDuel(match);       break;
+      case 'king_of_table': renderKing(match);       break;
+      case 'team_battle':   renderTeamBattle(match); break;
+      case 'singapore':     renderSingapore(match);  break;
+      case 'tournament':    renderTournament(match); break;
+      case 'round_robin':   renderRoundRobin(match); break;
+      case 'custom':        renderCustom(match);     break;
+      default:              renderDuel(match);
+    }
+  }
+  function buildEndGameBtn() {
+    return '<button class="btn-ch-danger" style="flex:1;" id="btn-end-game">' +
+      ICON_END_GAME +
+      '<span data-lang="PLAY_END_GAME">' + getLang('PLAY_END_GAME') + '</span>' +
+      '</button>';
+  }
+
+  function attachEndGameListener() {
+    var btn = document.getElementById('btn-end-game');
+    if (btn) {
+      btn.addEventListener('click', function () {
+        showConfirm('PLAY_CONFIRM_END_GAME', doEndGame);
+      });
     }
   }
 
@@ -190,30 +229,24 @@
     matchArea.innerHTML =
       '<div class="section-label">MATCH #' + matchNo + '</div>' +
       '<div class="ch-card" style="margin-bottom:.5rem;">' +
-        renderScoreRow(p1, match, true) +
+        renderScoreRow(p1, true) +
         '<div style="text-align:center;font-size:.75rem;color:var(--color-text-muted);padding:.35rem 0;font-weight:500;">VS</div>' +
-        renderScoreRow(p2, match, true) +
+        renderScoreRow(p2, true) +
       '</div>' +
       renderMatchHistory();
 
-    actionsBar.innerHTML =
-      '<button class="btn-ch-danger" style="flex:1;" id="btn-end-game">' +
-        '<i class="ti ti-player-stop"></i>' +
-        '<span data-lang="PLAY_END_GAME">' + getLang('PLAY_END_GAME') + '</span>' +
-      '</button>';
+    actionsBar.innerHTML = buildEndGameBtn();
 
-    // Tombol tap nama = menang (ditempel di score rows)
-    matchArea.querySelectorAll('.play-winner-btn').forEach(function (btn, index) {
-      var winner = index === 0 ? p1 : p2;
-      btn.addEventListener('click', function () {
-        confirmWinner(winner);
-      });
-    });
+    // FIX: bind dengan array player yang sudah divalidasi
+    var winnerBtns = matchArea.querySelectorAll('.play-winner-btn');
+    if (winnerBtns[0] && p1) {
+      winnerBtns[0].addEventListener('click', function () { confirmWinner(p1); });
+    }
+    if (winnerBtns[1] && p2) {
+      winnerBtns[1].addEventListener('click', function () { confirmWinner(p2); });
+    }
 
-    document.getElementById('btn-end-game').addEventListener('click', function () {
-      showConfirm('PLAY_CONFIRM_END_GAME', doEndGame);
-    });
-
+    attachEndGameListener();
     applyLang();
   }
 
@@ -254,30 +287,25 @@
         '<i class="ti ti-list-numbers"></i>' +
         '<span data-lang="PLAY_QUEUE">' + getLang('PLAY_QUEUE') + '</span>' +
       '</button>' +
-      '<button class="btn-ch-danger" style="flex:1;" id="btn-end-game">' +
-        '<i class="ti ti-player-stop"></i>' +
-        '<span data-lang="PLAY_END_GAME">' + getLang('PLAY_END_GAME') + '</span>' +
-      '</button>';
+      buildEndGameBtn();
 
     document.getElementById('btn-queue').addEventListener('click', openQueueSheet);
-    document.getElementById('btn-end-game').addEventListener('click', function () {
-      showConfirm('PLAY_CONFIRM_END_GAME', doEndGame);
-    });
+    attachEndGameListener();
 
-    // Tap nama pemain = menang
-    matchArea.querySelectorAll('.play-winner-btn').forEach(function (btn, index) {
-      var winner = (index === 0) ? p1 : p2;
-      btn.addEventListener('click', function () {
-        confirmWinner(winner);
-      });
-    });
+    var winnerBtns = matchArea.querySelectorAll('.play-winner-btn');
+    if (winnerBtns[0] && p1) {
+      winnerBtns[0].addEventListener('click', function () { confirmWinner(p1); });
+    }
+    if (winnerBtns[1] && p2) {
+      winnerBtns[1].addEventListener('click', function () { confirmWinner(p2); });
+    }
 
     loadQueue();
     applyLang();
   }
 
   function renderKingRow(player, match, kingId) {
-    if (!player) return '';
+    if (!player) return '<div style="padding:.5rem;color:var(--color-text-muted);font-size:.8rem;">Pemain tidak ditemukan</div>';
     var isKing = player.player_id === kingId;
     var name   = esc(player.player_name) + (isKing ? ' <span style="color:#EF9F27;">♛</span>' : '');
     return '<div class="play-winner-btn" style="display:flex;align-items:center;gap:.625rem;padding:.5rem;cursor:pointer;border-radius:var(--radius-sm);' +
@@ -316,11 +344,7 @@
       '</div>' +
       renderMatchHistory();
 
-    actionsBar.innerHTML =
-      '<button class="btn-ch-danger" style="flex:1;" id="btn-end-game">' +
-        '<i class="ti ti-player-stop"></i>' +
-        '<span data-lang="PLAY_END_GAME">' + getLang('PLAY_END_GAME') + '</span>' +
-      '</button>';
+    actionsBar.innerHTML = buildEndGameBtn();
 
     matchArea.querySelectorAll('.play-team-win-btn').forEach(function (btn) {
       btn.addEventListener('click', function () {
@@ -329,10 +353,7 @@
       });
     });
 
-    document.getElementById('btn-end-game').addEventListener('click', function () {
-      showConfirm('PLAY_CONFIRM_END_GAME', doEndGame);
-    });
-
+    attachEndGameListener();
     applyLang();
   }
 
@@ -346,7 +367,7 @@
         '<span style="font-size:.875rem;">' + esc(p.player_name) + '</span>' +
         '</div>';
     });
-    return html;
+    return html || '<div style="color:var(--color-text-muted);font-size:.8rem;padding:.35rem 0;">Tidak ada pemain di tim ini</div>';
   }
 
   function confirmTeamWin(team, match, teamA, teamB) {
@@ -376,7 +397,7 @@
   // ============================================================
   function renderSingapore(match) {
     var mp = match.match_players || [];
-    var matchPlayers = mp.map(function (mp) { return findPlayer(mp.player_id); }).filter(Boolean);
+    var matchPlayers = mp.map(function (p) { return findPlayer(p.player_id); }).filter(Boolean);
     var matchNo = match.match_no || allMatches.length;
 
     matchArea.innerHTML =
@@ -388,10 +409,7 @@
       renderMatchHistory();
 
     actionsBar.innerHTML =
-      '<button class="btn-ch-danger" style="flex:1;" id="btn-end-game">' +
-        '<i class="ti ti-player-stop"></i>' +
-        '<span data-lang="PLAY_END_GAME">' + getLang('PLAY_END_GAME') + '</span>' +
-      '</button>' +
+      buildEndGameBtn() +
       '<button class="btn-ch-primary" style="flex:1;" id="btn-input-rank">' +
         '<i class="ti ti-list-numbers"></i>' +
         '<span data-lang="PLAY_INPUT_RANKING">' + getLang('PLAY_INPUT_RANKING') + '</span>' +
@@ -400,14 +418,14 @@
     document.getElementById('btn-input-rank').addEventListener('click', function () {
       openRankingSheet(matchPlayers, match);
     });
-    document.getElementById('btn-end-game').addEventListener('click', function () {
-      showConfirm('PLAY_CONFIRM_END_GAME', doEndGame);
-    });
-
+    attachEndGameListener();
     applyLang();
   }
 
   function renderSingaporeRows(matchPlayers) {
+    if (!matchPlayers.length) {
+      return '<div style="color:var(--color-text-muted);font-size:.8rem;padding:.5rem 0;">Tidak ada data pemain</div>';
+    }
     var html = '';
     matchPlayers.forEach(function (p, i) {
       html += '<div style="display:flex;align-items:center;gap:.625rem;padding:.4rem 0;' +
@@ -433,9 +451,9 @@
     matchArea.innerHTML =
       '<div class="section-label">MATCH #' + matchNo + ' · RONDE ' + round + '</div>' +
       '<div class="ch-card" style="margin-bottom:.5rem;">' +
-        renderScoreRow(p1, match, true) +
+        renderScoreRow(p1, true) +
         '<div style="text-align:center;font-size:.75rem;color:var(--color-text-muted);padding:.35rem 0;font-weight:500;">VS</div>' +
-        renderScoreRow(p2, match, true) +
+        renderScoreRow(p2, true) +
       '</div>' +
       renderTournamentProgress() +
       renderMatchHistory();
@@ -445,23 +463,18 @@
         '<i class="ti ti-tournament"></i>' +
         '<span data-lang="PLAY_BRACKET">' + getLang('PLAY_BRACKET') + '</span>' +
       '</button>' +
-      '<button class="btn-ch-danger" style="flex:1;" id="btn-end-game">' +
-        '<i class="ti ti-player-stop"></i>' +
-        '<span data-lang="PLAY_END_GAME">' + getLang('PLAY_END_GAME') + '</span>' +
-      '</button>';
+      buildEndGameBtn();
 
-    matchArea.querySelectorAll('.play-winner-btn').forEach(function (btn, index) {
-      var winner = (index === 0) ? p1 : p2;
-      btn.addEventListener('click', function () {
-        confirmWinner(winner);
-      });
-    });
+    var winnerBtns = matchArea.querySelectorAll('.play-winner-btn');
+    if (winnerBtns[0] && p1) {
+      winnerBtns[0].addEventListener('click', function () { confirmWinner(p1); });
+    }
+    if (winnerBtns[1] && p2) {
+      winnerBtns[1].addEventListener('click', function () { confirmWinner(p2); });
+    }
 
     document.getElementById('btn-bracket').addEventListener('click', openBracketSheet);
-    document.getElementById('btn-end-game').addEventListener('click', function () {
-      showConfirm('PLAY_CONFIRM_END_GAME', doEndGame);
-    });
-
+    attachEndGameListener();
     applyLang();
   }
 
@@ -501,30 +514,24 @@
         '<div style="font-size:.75rem;color:var(--color-text-secondary);">' + totalFinished + '/' + totalExpected + ' selesai</div>' +
       '</div>' +
       '<div class="ch-card" style="margin-bottom:.5rem;">' +
-        renderScoreRow(p1, match, true) +
+        renderScoreRow(p1, true) +
         '<div style="text-align:center;font-size:.75rem;color:var(--color-text-muted);padding:.35rem 0;font-weight:500;">VS</div>' +
-        renderScoreRow(p2, match, true) +
+        renderScoreRow(p2, true) +
       '</div>' +
       renderStandings() +
       renderMatchHistory();
 
-    actionsBar.innerHTML =
-      '<button class="btn-ch-danger" style="flex:1;" id="btn-end-game">' +
-        '<i class="ti ti-player-stop"></i>' +
-        '<span data-lang="PLAY_END_GAME">' + getLang('PLAY_END_GAME') + '</span>' +
-      '</button>';
+    actionsBar.innerHTML = buildEndGameBtn();
 
-    matchArea.querySelectorAll('.play-winner-btn').forEach(function (btn, index) {
-      var winner = (index === 0) ? p1 : p2;
-      btn.addEventListener('click', function () {
-        confirmWinner(winner);
-      });
-    });
+    var winnerBtns = matchArea.querySelectorAll('.play-winner-btn');
+    if (winnerBtns[0] && p1) {
+      winnerBtns[0].addEventListener('click', function () { confirmWinner(p1); });
+    }
+    if (winnerBtns[1] && p2) {
+      winnerBtns[1].addEventListener('click', function () { confirmWinner(p2); });
+    }
 
-    document.getElementById('btn-end-game').addEventListener('click', function () {
-      showConfirm('PLAY_CONFIRM_END_GAME', doEndGame);
-    });
-
+    attachEndGameListener();
     applyLang();
   }
 
@@ -561,12 +568,12 @@
   // ============================================================
   function renderCustom(match) {
     var mp = match.match_players || [];
-    var matchPlayers = mp.map(function (mp) { return findPlayer(mp.player_id); }).filter(Boolean);
+    var matchPlayers = mp.map(function (p) { return findPlayer(p.player_id); }).filter(Boolean);
     var matchNo = match.match_no || allMatches.length;
 
     // Custom: bisa 1v1 atau multi-player → auto-detect dari match_players
     if (matchPlayers.length === 2) {
-      renderDuel(match); // fallback ke duel rendering
+      renderDuel(match);
       return;
     }
 
@@ -579,10 +586,7 @@
       renderMatchHistory();
 
     actionsBar.innerHTML =
-      '<button class="btn-ch-danger" style="flex:1;" id="btn-end-game">' +
-        '<i class="ti ti-player-stop"></i>' +
-        '<span data-lang="PLAY_END_GAME">' + getLang('PLAY_END_GAME') + '</span>' +
-      '</button>' +
+      buildEndGameBtn() +
       '<button class="btn-ch-primary" style="flex:1;" id="btn-input-rank">' +
         '<i class="ti ti-list-numbers"></i>' +
         '<span data-lang="PLAY_INPUT_RANKING">' + getLang('PLAY_INPUT_RANKING') + '</span>' +
@@ -591,18 +595,17 @@
     document.getElementById('btn-input-rank').addEventListener('click', function () {
       openRankingSheet(matchPlayers, match);
     });
-    document.getElementById('btn-end-game').addEventListener('click', function () {
-      showConfirm('PLAY_CONFIRM_END_GAME', doEndGame);
-    });
-
+    attachEndGameListener();
     applyLang();
   }
 
   // ============================================================
   // HELPER: renderScoreRow — nama pemain bisa diklik = menang
   // ============================================================
-  function renderScoreRow(player, match, clickable) {
-    if (!player) return '';
+  function renderScoreRow(player, clickable) {
+    if (!player) {
+      return '<div style="padding:.5rem;color:var(--color-text-muted);font-size:.8rem;">—</div>';
+    }
     var style = clickable
       ? 'cursor:pointer;padding:.5rem;border-radius:var(--radius-sm);'
       : 'padding:.5rem;';
@@ -665,6 +668,7 @@
   });
 
   function confirmWinner(winner) {
+    if (!winner) return;
     if (isSubmittingResult) return;
     Swal.fire({
       title: esc(winner.player_name) + ' ' + getLang('PLAY_WIN_LABEL') + '?',
@@ -675,7 +679,6 @@
       confirmButtonColor: getComputedStyle(document.documentElement)
         .getPropertyValue('--color-success')
         .trim()
-
     }).then(function (result) {
       if (!result.isConfirmed) return;
       if (isSubmittingResult) return;
@@ -690,7 +693,7 @@
   // ============================================================
   function openRankingSheet(matchPlayers, match) {
     pendingRanking = {};
-    var rankOrder  = matchPlayers.slice(); // urutan saat ini = ranking
+    var rankOrder = matchPlayers.slice();
 
     function renderRankItems() {
       rankingList.innerHTML = '';
@@ -710,9 +713,9 @@
           upBtn.innerHTML = '<i class="ti ti-arrow-up"></i>';
           upBtn.addEventListener('click', function (e) {
             e.stopPropagation();
-            var tmp      = rankOrder[i - 1];
+            var tmp = rankOrder[i - 1];
             rankOrder[i - 1] = rankOrder[i];
-            rankOrder[i]     = tmp;
+            rankOrder[i] = tmp;
             renderRankItems();
           });
           item.appendChild(upBtn);
@@ -723,9 +726,9 @@
           downBtn.innerHTML = '<i class="ti ti-arrow-down"></i>';
           downBtn.addEventListener('click', function (e) {
             e.stopPropagation();
-            var tmp      = rankOrder[i + 1];
+            var tmp = rankOrder[i + 1];
             rankOrder[i + 1] = rankOrder[i];
-            rankOrder[i]     = tmp;
+            rankOrder[i] = tmp;
             renderRankItems();
           });
           item.appendChild(downBtn);
@@ -765,9 +768,7 @@
       .then(function (data) {
         queueState = (data || []).filter(function (q) { return q.status === 'waiting'; });
         queueState.sort(function (a, b) { return (a.queue_order || 0) - (b.queue_order || 0); });
-        if (currentMatch) {
-          renderMatch(currentMatch);
-        }
+        if (currentMatch) renderMatch(currentMatch);
       })
       .catch(function () {});
   }
@@ -832,7 +833,6 @@
   function renderAddToQueue() {
     var waitingIds = queueState.map(function (q) { return q.player_id; });
     var available  = players.filter(function (p) { return waitingIds.indexOf(p.player_id) === -1; });
-
     if (!available.length) return;
 
     var addDiv = document.createElement('div');
@@ -850,9 +850,7 @@
       btn.addEventListener('click', function () {
         var pid = btn.getAttribute('data-pid');
         Api.queue.add(sessionGameId, pid)
-          .then(function () {
-            return Api.queue.get(sessionGameId);
-          })
+          .then(function () { return Api.queue.get(sessionGameId); })
           .then(function (data) {
             queueState = (data || []).filter(function (q) { return q.status === 'waiting'; });
             queueState.sort(function (a, b) { return (a.queue_order || 0) - (b.queue_order || 0); });
@@ -879,10 +877,6 @@
   });
 
   function renderBracket() {
-    var finished  = allMatches.filter(function (m) { return m.status === 'finished'; });
-    var ongoing   = allMatches.filter(function (m) { return m.status === 'ongoing'; });
-    var scheduled = allMatches.filter(function (m) { return m.status === 'scheduled'; });
-
     var allByRound = {};
     allMatches.forEach(function (m) {
       var r = m.round || 1;
@@ -930,9 +924,7 @@
     if (winnerTeam) payload.winner_team   = winnerTeam;
 
     Api.match.finish(payload)
-      .then(function () {
-        return Api.match.getAll(sessionGameId);
-      })
+      .then(function () { return Api.match.getAll(sessionGameId); })
       .then(function (matches) {
         allMatches = (matches || []).map(function (m) {
           if (!m.match_players && m.players) m.match_players = m.players;
@@ -987,15 +979,10 @@
       return { player_id: p.player_id, ranking: i + 1 };
     });
 
-    var payload = {
-      match_id: matchId,
-      rankings: rankings
-    };
+    var payload = { match_id: matchId, rankings: rankings };
 
     Api.match.finish(payload)
-      .then(function () {
-        return Api.match.getAll(sessionGameId);
-      })
+      .then(function () { return Api.match.getAll(sessionGameId); })
       .then(function (matches) {
         allMatches = matches || [];
         hideLoading();
@@ -1014,9 +1001,7 @@
     showLoading();
 
     Api.sessionGame.updateStatus(sessionGameId, 'finished')
-      .then(function () {
-        return Api.match.getAll(sessionGameId);
-      })
+      .then(function () { return Api.match.getAll(sessionGameId); })
       .then(function (matches) {
         allMatches = matches || [];
         hideLoading();
@@ -1048,7 +1033,6 @@
     Object.keys(wins).forEach(function (pid) {
       if (wins[pid] > mvpWins) { mvpWins = wins[pid]; mvpId = pid; }
     });
-
     var mvp = mvpId ? findPlayer(mvpId) : null;
 
     // Hitung streak terpanjang
@@ -1065,7 +1049,7 @@
           curStreak = 1;
         }
         if (curStreak > longestStreak) {
-          longestStreak     = curStreak;
+          longestStreak = curStreak;
           var sp = findPlayer(streakPid);
           longestStreakName = sp ? sp.player_name : '';
         }
@@ -1073,26 +1057,26 @@
     });
 
     var html =
-      '<div class="stat-row" style="display:flex;justify-content:space-between;font-size:.875rem;color:var(--color-text-secondary);padding:.3rem 0;">' +
-        '<span data-lang="PLAY_SUMMARY_MODE">' + getLang('PLAY_SUMMARY_MODE') + '</span>' +
+      '<div style="display:flex;justify-content:space-between;font-size:.875rem;color:var(--color-text-secondary);padding:.3rem 0;">' +
+        '<span>' + getLang('PLAY_SUMMARY_MODE') + '</span>' +
         '<span style="color:var(--color-text);font-weight:500;">' + (MODE_LABELS[gameMode] || gameMode) + '</span>' +
       '</div>' +
-      '<div class="stat-row" style="display:flex;justify-content:space-between;font-size:.875rem;color:var(--color-text-secondary);padding:.3rem 0;">' +
-        '<span data-lang="PLAY_SUMMARY_TOTAL">' + getLang('PLAY_SUMMARY_TOTAL') + '</span>' +
+      '<div style="display:flex;justify-content:space-between;font-size:.875rem;color:var(--color-text-secondary);padding:.3rem 0;">' +
+        '<span>' + getLang('PLAY_SUMMARY_TOTAL') + '</span>' +
         '<span style="color:var(--color-text);font-weight:500;">' + total + ' match</span>' +
       '</div>';
 
     if (mvp) {
       html += '<div class="ch-divider"></div>' +
-        '<div class="stat-row" style="display:flex;justify-content:space-between;font-size:.875rem;color:var(--color-text-secondary);padding:.3rem 0;">' +
+        '<div style="display:flex;justify-content:space-between;font-size:.875rem;color:var(--color-text-secondary);padding:.3rem 0;">' +
           '<span>👑 ' + getLang('PLAY_SUMMARY_TOP') + '</span>' +
           '<span style="color:var(--color-text);font-weight:500;">' + esc(mvp.player_name) + ' (' + mvpWins + ' win)</span>' +
         '</div>';
     }
 
     if (longestStreak > 1) {
-      html += '<div class="stat-row" style="display:flex;justify-content:space-between;font-size:.875rem;color:var(--color-text-secondary);padding:.3rem 0;">' +
-        '<span data-lang="PLAY_SUMMARY_STREAK">' + getLang('PLAY_SUMMARY_STREAK') + '</span>' +
+      html += '<div style="display:flex;justify-content:space-between;font-size:.875rem;color:var(--color-text-secondary);padding:.3rem 0;">' +
+        '<span>' + getLang('PLAY_SUMMARY_STREAK') + '</span>' +
         '<span style="color:var(--color-text);font-weight:500;">' + esc(longestStreakName) + ' · ' + longestStreak + 'x</span>' +
         '</div>';
     }
@@ -1101,17 +1085,17 @@
     summaryOverlay.classList.remove('d-none');
 
     // Nonaktifkan area main
-    matchArea.style.opacity = '0.4';
+    matchArea.style.opacity       = '0.4';
     matchArea.style.pointerEvents = 'none';
-    actionsBar.style.opacity = '0.4';
+    actionsBar.style.opacity      = '0.4';
     actionsBar.style.pointerEvents = 'none';
   }
 
   function closeSummarySheet() {
     summaryOverlay.classList.add('d-none');
-    matchArea.style.opacity    = '';
+    matchArea.style.opacity       = '';
     matchArea.style.pointerEvents = '';
-    actionsBar.style.opacity   = '';
+    actionsBar.style.opacity      = '';
     actionsBar.style.pointerEvents = '';
   }
 
@@ -1131,9 +1115,7 @@
     showConfirm('CONFIRM_END_SESSION', function () {
       showLoading();
       Api.statistics.compute(sessionId)
-        .then(function () {
-          return Api.session.updateStatus(sessionId, 'finished');
-        })
+        .then(function () { return Api.session.updateStatus(sessionId, 'finished'); })
         .then(function () {
           hideLoading();
           clearActiveState();
@@ -1192,8 +1174,10 @@
   }
 
   function findPlayer(playerId) {
+    if (!playerId) return null;
     for (var i = 0; i < players.length; i++) {
-      if (players[i].player_id === playerId) return players[i];
+      var p = players[i];
+      if (p.player_id === playerId || p.id === playerId) return p;
     }
     return null;
   }
