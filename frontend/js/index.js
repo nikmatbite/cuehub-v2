@@ -224,7 +224,7 @@
     };
 
     setButtonLoading(btnRegister, true);
-
+    console.log("CALL API", payload);
     Api.auth.register(payload)
       .then(function () {
         setButtonLoading(btnRegister, false);
