@@ -31,8 +31,11 @@ var AuthService = {
     };
 
     withLock(function () {
+      Logger.log("APPEND USERS");
       appendRowObject(userSheet, newUser);
+      Logger.log("APPEND CONFIG");
       appendRowObject(configSheet, newConfig);
+      Logger.log("APPEND SELESAI");
     });
 
     logAction(userId, 'REGISTER');

@@ -191,14 +191,15 @@
       '</button>';
 
     // Tombol tap nama = menang (ditempel di score rows)
-    matchArea.querySelectorAll('[data-winner-id]').forEach(function (btn) {
+    matchArea.querySelectorAll('.play-winner-btn').forEach(function (btn, index) {
+      var winner = index === 0 ? p1 : p2;
       btn.addEventListener('click', function () {
-        openWinnerSheet([p1, p2]);
+        confirmWinner(winner);
       });
     });
 
     document.getElementById('btn-end-game').addEventListener('click', function () {
-      openWinnerSheet([p1, p2]);
+      showConfirm('PLAY_CONFIRM_END_GAME', doEndGame);
     });
 
     applyLang();
@@ -257,8 +258,9 @@
 
     // Tap nama pemain = menang
     matchArea.querySelectorAll('.play-winner-btn').forEach(function (btn) {
+      var winner = index === 0 ? p1 : p2;
       btn.addEventListener('click', function () {
-        openWinnerSheet([p1, p2]);
+        confirmWinner(winner);
       });
     });
 
@@ -441,8 +443,9 @@
       '</button>';
 
     matchArea.querySelectorAll('.play-winner-btn').forEach(function (btn) {
+      var winner = index === 0 ? p1 : p2;
       btn.addEventListener('click', function () {
-        openWinnerSheet([p1, p2]);
+        confirmWinner(winner);
       });
     });
 
@@ -504,8 +507,9 @@
       '</button>';
 
     matchArea.querySelectorAll('.play-winner-btn').forEach(function (btn) {
+      var winner = index === 0 ? p1 : p2;
       btn.addEventListener('click', function () {
-        openWinnerSheet([p1, p2]);
+        confirmWinner(winner);
       });
     });
 
@@ -670,7 +674,7 @@
     if (e.target === winnerOverlay) closeWinnerSheet();
   });
 
-  function confirmWinner(winner, allInMatch) {
+  function confirmWinner(winner) {
     Swal.fire({
       title:            esc(winner.player_name) + ' ' + getLang('PLAY_WIN_LABEL') + '?',
       icon:             'question',
