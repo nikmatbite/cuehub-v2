@@ -467,7 +467,6 @@ var MatchService = {
     var players = overridePlayers;
     if (!players.length) {
       var queue = MatchService.queueGet({ session_game_id: sessionGameId });
-      var shuffled = queue.sort(function() { return Math.random() - 0.5; });
       players = queue.slice(0, 2).map(function (q) { return q.player_id; });
     }
     if (players.length < 2) throw new ApiError('INSUFFICIENT_PLAYERS');

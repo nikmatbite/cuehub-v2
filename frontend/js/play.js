@@ -10,6 +10,7 @@
   // STATE
   // ============================================================
   var active = getActiveState();
+  var isSubmittingResult = false;
   if (!active || !active.session_id || !active.session_game_id) {
     goTo('pick-mode.html');
     return;
@@ -135,6 +136,7 @@
       })
       .then(function (data) {
         currentMatch = data;
+        isSubmittingResult = false;
         renderMatch(currentMatch);
       })
       .catch(function (err) {
@@ -249,16 +251,12 @@
 
     document.getElementById('btn-queue').addEventListener('click', openQueueSheet);
     document.getElementById('btn-end-game').addEventListener('click', function () {
-      if (!hasAnyInput) {
-        showConfirm('PLAY_CONFIRM_END_GAME', doEndGame);
-      } else {
-        openWinnerSheet([p1, p2]);
-      }
+      showConfirm('PLAY_CONFIRM_END_GAME', doEndGame);
     });
 
     // Tap nama pemain = menang
-    matchArea.querySelectorAll('.play-winner-btn').forEach(function (btn) {
-      var winner = index === 0 ? p1 : p2;
+    matchArea.querySelectorAll('.play-winner-btn').forEach(function (btn, index) {
+      var winner = (index === 0) ? p1 : p2;
       btn.addEventListener('click', function () {
         confirmWinner(winner);
       });
@@ -442,8 +440,8 @@
         '<span data-lang="PLAY_END_GAME">' + getLang('PLAY_END_GAME') + '</span>' +
       '</button>';
 
-    matchArea.querySelectorAll('.play-winner-btn').forEach(function (btn) {
-      var winner = index === 0 ? p1 : p2;
+    matchArea.querySelectorAll('.play-winner-btn').forEach(function (btn, index) {
+      var winner = (index === 0) ? p1 : p2;
       btn.addEventListener('click', function () {
         confirmWinner(winner);
       });
@@ -506,8 +504,8 @@
         '<span data-lang="PLAY_END_GAME">' + getLang('PLAY_END_GAME') + '</span>' +
       '</button>';
 
-    matchArea.querySelectorAll('.play-winner-btn').forEach(function (btn) {
-      var winner = index === 0 ? p1 : p2;
+    matchArea.querySelectorAll('.play-winner-btn').forEach(function (btn, index) {
+      var winner = (index === 0) ? p1 : p2;
       btn.addEventListener('click', function () {
         confirmWinner(winner);
       });
@@ -649,24 +647,6 @@
   // ============================================================
   // WINNER SHEET (Duel, King, Tournament, Round Robin)
   // ============================================================
-  function openWinnerSheet(matchPlayers) {
-    winnerOptions.innerHTML = '';
-    var valid = matchPlayers.filter(Boolean);
-    valid.forEach(function (p) {
-      var btn = document.createElement('button');
-      btn.className = 'btn-ch-primary';
-      btn.style.cssText = 'background:var(--color-success);border-color:var(--color-success);margin-bottom:.35rem;';
-      btn.innerHTML = makeAvatar(p.player_name, 'sm') + '<span style="flex:1;text-align:left;">' + esc(p.player_name) + '</span>' +
-        '<i class="ti ti-trophy" style="font-size:.9rem;"></i>';
-      btn.addEventListener('click', function () {
-        closeWinnerSheet();
-        confirmWinner(p, valid);
-      });
-      winnerOptions.appendChild(btn);
-    });
-    winnerOverlay.classList.remove('d-none');
-  }
-
   function closeWinnerSheet() { winnerOverlay.classList.add('d-none'); }
 
   document.getElementById('btn-cancel-winner').addEventListener('click', closeWinnerSheet);
@@ -675,15 +655,21 @@
   });
 
   function confirmWinner(winner) {
+    if (isSubmittingResult) return;
     Swal.fire({
-      title:            esc(winner.player_name) + ' ' + getLang('PLAY_WIN_LABEL') + '?',
-      icon:             'question',
-      showCancelButton:  true,
+      title: esc(winner.player_name) + ' ' + getLang('PLAY_WIN_LABEL') + '?',
+      icon: 'question',
+      showCancelButton: true,
       confirmButtonText: getLang('YES'),
-      cancelButtonText:  getLang('CANCEL'),
-      confirmButtonColor: getComputedStyle(document.documentElement).getPropertyValue('--color-success').trim()
+      cancelButtonText: getLang('CANCEL'),
+      confirmButtonColor: getComputedStyle(document.documentElement)
+        .getPropertyValue('--color-success')
+        .trim()
+
     }).then(function (result) {
       if (!result.isConfirmed) return;
+      if (isSubmittingResult) return;
+      isSubmittingResult = true;
       hasAnyInput = true;
       finishMatch(currentMatch.match_id, winner.player_id, null, null);
     });
@@ -769,12 +755,8 @@
       .then(function (data) {
         queueState = (data || []).filter(function (q) { return q.status === 'waiting'; });
         queueState.sort(function (a, b) { return (a.queue_order || 0) - (b.queue_order || 0); });
-        // Re-render preview jika sudah tampil
-        var preview = matchArea.querySelector('[data-queue-preview]');
-        if (matchArea.innerHTML) {
-          // Refresh tanpa re-render full
-          var previewEl = document.createElement('div');
-          previewEl.innerHTML = renderQueuePreview();
+        if (currentMatch) {
+          renderMatch(currentMatch);
         }
       })
       .catch(function () {});
@@ -944,6 +926,7 @@
       .then(function (matches) {
         allMatches = matches || [];
         hideLoading();
+        isSubmittingResult = false;
 
         // Setelah finish, cek apakah ada match ongoing berikutnya atau perlu buat baru
         var nextOngoing = findOngoingMatch(allMatches);
@@ -961,6 +944,7 @@
                 allMatches = allMatches.map(function (m) {
                   return m.match_id === data.match_id ? data : m;
                 });
+                isSubmittingResult = false;
                 renderMatch(currentMatch);
               })
               .catch(function () { doEndGame(); });
@@ -974,6 +958,7 @@
         }
       })
       .catch(function (err) {
+        isSubmittingResult = false;
         hideLoading();
         showToastMsg('error', resolveError(err));
       });
@@ -985,27 +970,22 @@
   function finishMatchRanking(matchId, rankOrder) {
     showLoading();
 
-    var winnerId = rankOrder[0] ? rankOrder[0].player_id : null;
-    var payload  = { match_id: matchId };
-    if (winnerId) payload.winner_player = winnerId;
-
-    // Tambah score per player (ranking = score terbalik)
-    var scorePromises = rankOrder.map(function (p, i) {
-      var score = rankOrder.length - i; // rank 1 = score tertinggi
-      return Api.match.addScore(matchId, p.player_id, score).catch(function () {});
+    var rankings = rankOrder.map(function (p, i) {
+      return { player_id: p.player_id, ranking: i + 1 };
     });
 
-    Promise.all(scorePromises)
-      .then(function () {
-        return Api.match.finish(payload);
-      })
+    var payload = {
+      match_id: matchId,
+      rankings: rankings
+    };
+
+    Api.match.finish(payload)
       .then(function () {
         return Api.match.getAll(sessionGameId);
       })
       .then(function (matches) {
         allMatches = matches || [];
         hideLoading();
-        // Singapore/custom: satu ronde = selesai → langsung ke next atau end
         createNextMatch();
       })
       .catch(function (err) {
