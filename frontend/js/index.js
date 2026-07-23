@@ -141,15 +141,25 @@
     var email = regEmail.value.trim();
     var pass  = regPassword.value;
 
+    console.log({
+      name: name,
+      email: email,
+      pass: pass,
+      passLength: pass.length
+    });
+
     if (!name || !email || !pass) {
+      console.log("GAGAL: FIELD KOSONG");
       setError(regError, getLang('MISSING_FIELD'));
       return false;
     }
     if (!validateEmail(email)) {
+      console.log("GAGAL: EMAIL");
       setError(regError, getLang('MISSING_FIELD'));
       return false;
     }
     if (pass.length < 6) {
+      console.log("GAGAL: PASSWORD");
       setError(regError, getLang('MISSING_FIELD'));
       return false;
     }
