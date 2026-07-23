@@ -2,16 +2,20 @@ var GAS_URL = 'https://script.google.com/macros/s/AKfycbyv1l9Im-0zjssukHxXdRBMIQ
 
 function gasRequest(action, payload) {
   var body = JSON.stringify({ action: action, payload: payload || {} });
+  console.log("ACTION:", action);
+  console.log("PAYLOAD:", payload);
   return fetch(GAS_URL, {
     method:  'POST',
     body:    body,
     headers: { 'Content-Type': 'text/plain' }
   })
   .then(function (res) {
+    console.log("STATUS:", res.status);
     if (!res.ok) throw new Error('NETWORK_ERROR');
     return res.json();
   })
   .then(function (json) {
+    console.log("RESPONSE:", json);
     if (!json.success) {
       var code = (json.error && json.error.code) ? json.error.code : 'INTERNAL_ERROR';
       throw new Error(code);
