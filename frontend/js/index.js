@@ -209,6 +209,7 @@
   // ============================================================
   formReg.addEventListener('submit', function (e) {
     e.preventDefault();
+    console.log("REGISTER SUBMIT");
     setError(regError, '');
     setSuccess(regSuccess, '');
 
