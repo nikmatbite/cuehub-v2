@@ -213,7 +213,12 @@
     setError(regError, '');
     setSuccess(regSuccess, '');
 
-    if (!validateRegisterForm()) return;
+    if (!validateRegisterForm()) {
+      console.log("VALIDASI GAGAL");
+      return;
+    }
+
+    console.log("VALIDASI LOLOS");
 
     var payload = {
       display_name:     regName.value.trim(),
