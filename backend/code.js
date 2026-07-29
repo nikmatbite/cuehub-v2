@@ -50,7 +50,10 @@ function doGet(e) {
 }
 
 function doPost(e) {
-  Logger.log(JSON.stringify(e));
+  Logger.log('=== FULL REQUEST ===');
+  Logger.log('e: ' + JSON.stringify(e));
+  Logger.log('postData: ' + JSON.stringify(e.postData));
+  Logger.log('postData.contents: ' + (e.postData ? e.postData.contents : 'NULL'));
   return route(e);
 }
 
