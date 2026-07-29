@@ -62,10 +62,10 @@
       var icon     = btn.querySelector('i');
       if (input.type === 'password') {
         input.type   = 'text';
-        icon.className = 'ti ti-eye-off';
+        icon.className = 'fa-solid fa-eye-slash';
       } else {
         input.type   = 'password';
-        icon.className = 'ti ti-eye';
+        icon.className = 'fa-solid fa-eye';
       }
     });
   });

@@ -62,7 +62,7 @@
       })
       .catch(function (err) {
         playerListEl.innerHTML = '<div class="empty-state">' +
-          '<i class="ti ti-alert-circle"></i>' +
+          '<i class="fa-solid fa-circle-exclamation"></i>' +
           '<p>' + resolveError(err) + '</p>' +
           '</div>';
       });
@@ -81,7 +81,7 @@
 
     if (!filtered.length) {
       playerListEl.innerHTML = '<div class="empty-state">' +
-        '<i class="ti ti-users"></i>' +
+        '<i class="fa-solid fa-users"></i>' +
         '<p>' + getLang('PLAYER_NOT_FOUND') + '</p>' +
         '</div>';
       return;
@@ -150,7 +150,7 @@
       html += '<span class="player-chip">' +
         esc(p.player_name) +
         ' <button class="chip-remove" data-remove-id="' + esc(id) + '" aria-label="Hapus">'+
-          '<i class="ti ti-x"></i>' +
+          '<i class="fa-solid fa-xmark"></i>' +
         '</button>' +
       '</span>';
     });

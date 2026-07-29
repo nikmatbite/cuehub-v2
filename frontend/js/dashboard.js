@@ -219,7 +219,7 @@
     var el = document.getElementById('home-last-session');
     if (!session) {
       el.innerHTML = '<div class="empty-state" style="padding:1.25rem 0;">' +
-        '<i class="ti ti-ball-billiard"></i>' +
+        '<i class="fa-solid fa-circle-dot"></i>' +
         '<p data-lang="DASH_NO_SESSION">' + getLang('DASH_NO_SESSION') + '</p>' +
         '</div>';
       return;
@@ -263,14 +263,14 @@
         renderSessionList(sessions || []);
       })
       .catch(function () {
-        listEl.innerHTML = '<div class="empty-state"><i class="ti ti-alert-circle"></i><p>' + resolveError(null) + '</p></div>';
+        listEl.innerHTML = '<div class="empty-state"><i class="fa-solid fa-circle-exclamation"></i><p>' + resolveError(null) + '</p></div>';
       });
   }
 
   function renderSessionList(sessions) {
     var listEl = document.getElementById('session-list');
     if (!sessions.length) {
-      listEl.innerHTML = '<div class="empty-state"><i class="ti ti-ball-billiard"></i><p>' + getLang('HISTORY_NO_DATA') + '</p></div>';
+      listEl.innerHTML = '<div class="empty-state"><i class="fa-solid fa-circle-dot"></i><p>' + getLang('HISTORY_NO_DATA') + '</p></div>';
       return;
     }
 
@@ -283,7 +283,7 @@
       html += '<div class="ch-card">' +
         '<div style="display:flex;align-items:center;gap:.625rem;">' +
           '<div style="width:2rem;height:2rem;border-radius:var(--radius-sm);background:var(--color-surface-2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
-            '<i class="ti ti-ball-billiard" style="font-size:1rem;color:var(--color-primary);"></i>' +
+            '<i class="fa-solid fa-circle-dot" style="font-size:1rem;color:var(--color-primary);"></i>' +
           '</div>' +
           '<div style="flex:1;min-width:0;">' +
             '<div style="display:flex;justify-content:space-between;align-items:center;">' +
@@ -320,7 +320,7 @@
         renderPlayerList(allPlayers, '');
       })
       .catch(function () {
-        listEl.innerHTML = '<div class="empty-state"><i class="ti ti-alert-circle"></i><p>' + resolveError(null) + '</p></div>';
+        listEl.innerHTML = '<div class="empty-state"><i class="fa-solid fa-circle-exclamation"></i><p>' + resolveError(null) + '</p></div>';
       });
   }
 
@@ -342,7 +342,7 @@
     }
 
     if (!filtered.length) {
-      listEl.innerHTML = '<div class="empty-state"><i class="ti ti-users"></i><p>' + getLang('PLAYER_NOT_FOUND') + '</p></div>';
+      listEl.innerHTML = '<div class="empty-state"><i class="fa-solid fa-users"></i><p>' + getLang('PLAYER_NOT_FOUND') + '</p></div>';
       return;
     }
 
@@ -404,7 +404,7 @@
       Api.session.getAll('finished')
         .then(function (data) { renderHistorySession(data || []); })
         .catch(function () {
-          listEl.innerHTML = '<div class="empty-state"><i class="ti ti-alert-circle"></i><p>' + resolveError(null) + '</p></div>';
+          listEl.innerHTML = '<div class="empty-state"><i class="fa-solid fa-circle-exclamation"></i><p>' + resolveError(null) + '</p></div>';
         });
     } else {
       // By game: ambil semua sesi finished, lalu ambil session games per sesi
@@ -431,7 +431,7 @@
           renderHistoryGames(results);
         })
         .catch(function () {
-          listEl.innerHTML = '<div class="empty-state"><i class="ti ti-alert-circle"></i><p>' + resolveError(null) + '</p></div>';
+          listEl.innerHTML = '<div class="empty-state"><i class="fa-solid fa-circle-exclamation"></i><p>' + resolveError(null) + '</p></div>';
         });
     }
   }
@@ -439,7 +439,7 @@
   function renderHistorySession(sessions) {
     var listEl = document.getElementById('history-list');
     if (!sessions.length) {
-      listEl.innerHTML = '<div class="empty-state"><i class="ti ti-history"></i><p>' + getLang('HISTORY_NO_DATA') + '</p></div>';
+      listEl.innerHTML = '<div class="empty-state"><i class="fa-solid fa-clock-rotate-left"></i><p>' + getLang('HISTORY_NO_DATA') + '</p></div>';
       return;
     }
     sessions.sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
@@ -461,7 +461,7 @@
     var listEl = document.getElementById('history-list');
     var hasAny = results.some(function (r) { return r.games.length > 0; });
     if (!hasAny) {
-      listEl.innerHTML = '<div class="empty-state"><i class="ti ti-history"></i><p>' + getLang('HISTORY_NO_DATA') + '</p></div>';
+      listEl.innerHTML = '<div class="empty-state"><i class="fa-solid fa-clock-rotate-left"></i><p>' + getLang('HISTORY_NO_DATA') + '</p></div>';
       return;
     }
     var html = '';

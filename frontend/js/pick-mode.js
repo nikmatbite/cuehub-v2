@@ -111,7 +111,7 @@
         '<div class="mode-desc">' + getLang(m.descKey) + '</div>' +
       '</div>' +
       '<button class="topbar-btn" style="margin-right:.25rem;" data-info-mode="' + m.id + '" aria-label="Info">' +
-        '<i class="ti ti-info-circle"></i>' +
+        '<i class="fa-solid fa-circle-info"></i>' +
       '</button>' +
       '<button class="mode-start" data-start-mode="' + m.id + '"' +
         (enough ? '' : ' disabled') + '>' +

@@ -85,7 +85,7 @@
     return '<div class="' + cls + '">' + esc(initial) + '</div>';
   }
 
-  var ICON_END_GAME = '<i class="ti ti-square-rounded-filled"></i>';
+  var ICON_END_GAME = '<i class="fa-solid fa-square"></i>';
 
   // ============================================================
   // INIT
@@ -284,7 +284,7 @@
 
     actionsBar.innerHTML =
       '<button class="btn-ch-outline" style="flex:0 0 auto;padding:.6rem .875rem;" id="btn-queue">' +
-        '<i class="ti ti-list-numbers"></i>' +
+        '<i class="fa-solid fa-list-ol"></i>' +
         '<span data-lang="PLAY_QUEUE">' + getLang('PLAY_QUEUE') + '</span>' +
       '</button>' +
       buildEndGameBtn();
@@ -312,7 +312,7 @@
       (isKing ? 'background:var(--color-primary-soft);' : '') + '">' +
       makeAvatar(player.player_name, '') +
       '<div style="flex:1;font-size:.875rem;font-weight:500;">' + name + '</div>' +
-      '<i class="ti ti-chevron-right" style="color:var(--color-text-muted);font-size:.875rem;"></i>' +
+      '<i class="fa-solid fa-chevron-right" style="color:var(--color-text-muted);font-size:.875rem;"></i>' +
       '</div>';
   }
 
@@ -411,7 +411,7 @@
     actionsBar.innerHTML =
       buildEndGameBtn() +
       '<button class="btn-ch-primary" style="flex:1;" id="btn-input-rank">' +
-        '<i class="ti ti-list-numbers"></i>' +
+        '<i class="fa-solid fa-list-ol"></i>' +
         '<span data-lang="PLAY_INPUT_RANKING">' + getLang('PLAY_INPUT_RANKING') + '</span>' +
       '</button>';
 
@@ -460,7 +460,7 @@
 
     actionsBar.innerHTML =
       '<button class="btn-ch-outline" style="flex:0 0 auto;padding:.6rem .875rem;" id="btn-bracket">' +
-        '<i class="ti ti-tournament"></i>' +
+        '<i class="fa-solid fa-crown"></i>' +
         '<span data-lang="PLAY_BRACKET">' + getLang('PLAY_BRACKET') + '</span>' +
       '</button>' +
       buildEndGameBtn();
@@ -588,7 +588,7 @@
     actionsBar.innerHTML =
       buildEndGameBtn() +
       '<button class="btn-ch-primary" style="flex:1;" id="btn-input-rank">' +
-        '<i class="ti ti-list-numbers"></i>' +
+        '<i class="fa-solid fa-list-ol"></i>' +
         '<span data-lang="PLAY_INPUT_RANKING">' + getLang('PLAY_INPUT_RANKING') + '</span>' +
       '</button>';
 
@@ -612,7 +612,7 @@
     return '<div class="play-winner-btn" style="display:flex;align-items:center;gap:.625rem;' + style + '">' +
       makeAvatar(player.player_name, '') +
       '<div style="flex:1;font-size:.875rem;font-weight:500;">' + esc(player.player_name) + '</div>' +
-      (clickable ? '<i class="ti ti-chevron-right" style="color:var(--color-text-muted);font-size:.875rem;"></i>' : '') +
+      (clickable ? '<i class="fa-solid fa-chevron-right" style="color:var(--color-text-muted);font-size:.875rem;"></i>' : '') +
       '</div>';
   }
 
@@ -710,7 +710,7 @@
         if (i > 0) {
           var upBtn = document.createElement('button');
           upBtn.className = 'topbar-btn';
-          upBtn.innerHTML = '<i class="ti ti-arrow-up"></i>';
+          upBtn.innerHTML = '<i class="fa-solid fa-arrow-up"></i>';
           upBtn.addEventListener('click', function (e) {
             e.stopPropagation();
             var tmp = rankOrder[i - 1];
@@ -723,7 +723,7 @@
         if (i < rankOrder.length - 1) {
           var downBtn = document.createElement('button');
           downBtn.className = 'topbar-btn';
-          downBtn.innerHTML = '<i class="ti ti-arrow-down"></i>';
+          downBtn.innerHTML = '<i class="fa-solid fa-arrow-down"></i>';
           downBtn.addEventListener('click', function (e) {
             e.stopPropagation();
             var tmp = rankOrder[i + 1];
@@ -789,7 +789,7 @@
     var waiting = queueState;
     if (!waiting.length) {
       queueListEl.innerHTML = '<div class="empty-state" style="padding:.75rem 0;">' +
-        '<i class="ti ti-list-numbers"></i>' +
+        '<i class="fa-solid fa-list-ol"></i>' +
         '<p>' + getLang('PLAY_QUEUE_EMPTY') + '</p>' +
         '</div>';
 
@@ -808,7 +808,7 @@
         makeAvatar(p.player_name, 'sm') +
         '<span style="flex:1;font-size:.875rem;">' + esc(p.player_name) + '</span>' +
         '<button class="topbar-btn queue-remove-btn" data-pid="' + esc(q.player_id) + '" aria-label="Hapus">' +
-          '<i class="ti ti-x"></i>' +
+          '<i class="fa-solid fa-xmark"></i>' +
         '</button>' +
         '</div>';
     });
@@ -903,7 +903,7 @@
           '<span style="font-size:.7rem;color:var(--color-text-muted);">vs</span>' +
           '<span style="flex:1;text-align:right;font-size:.8rem;' + (done && w === (pb && pb.player_id) ? 'font-weight:600;color:var(--color-success);' : '') + '">' +
             (pb ? esc(pb.player_name) : '?') + '</span>' +
-          (done ? '<i class="ti ti-check" style="color:var(--color-success);font-size:.9rem;"></i>' :
+          (done ? '<i class="fa-solid fa-check" style="color:var(--color-success);font-size:.9rem;"></i>' :
                   '<span class="badge-status ' + (m.status === 'ongoing' ? 'badge-primary' : 'badge-warning') + '">' +
                     getLang('SESSION_' + m.status.toUpperCase()) + '</span>') +
           '</div>';
@@ -1163,7 +1163,7 @@
   function showMatchError(msg) {
     matchArea.classList.remove('d-none');
     matchArea.innerHTML = '<div class="empty-state">' +
-      '<i class="ti ti-alert-circle"></i>' +
+      '<i class="fa-solid fa-circle-exclamation"></i>' +
       '<p>' + esc(msg) + '</p>' +
       '<button class="btn-ch-outline" id="btn-retry" style="margin-top:.75rem;">' +
         getLang('PLAY_RETRY') +
