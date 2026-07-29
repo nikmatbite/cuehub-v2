@@ -54,20 +54,6 @@
       minPlayers: 3
     },
     {
-      id:       'tournament',
-      icon:     'fa-solid fa-trophy',
-      name:     'Tournament',
-      descKey:  'MODE_TOURN_DESC',
-      minPlayers: 4
-    },
-    {
-      id:       'round_robin',
-      icon:     'fa-solid fa-repeat',
-      name:     'Round Robin',
-      descKey:  'MODE_RR_DESC',
-      minPlayers: 3
-    },
-    {
       id:       'custom',
       icon:     'fa-solid fa-sliders',
       name:     'Custom',
@@ -299,4 +285,25 @@
       .replace(/"/g, '&quot;');
   }
 
+  // ============================================================
+  // SWITCH TAB CASUAL / TOURNAMENT
+  // ============================================================
+  window.switchTab = function(tab) {
+    var modeList       = document.getElementById('mode-list');
+    var modeTournament = document.getElementById('mode-list-tournament');
+    var tabCasual      = document.getElementById('tab-casual');
+    var tabTournament  = document.getElementById('tab-tournament');
+
+    if (tab === 'casual') {
+      modeList.classList.remove('d-none');
+      modeTournament.classList.add('d-none');
+      tabCasual.classList.add('active');
+      tabTournament.classList.remove('active');
+    } else {
+      modeList.classList.add('d-none');
+      modeTournament.classList.remove('d-none');
+      tabCasual.classList.remove('active');
+      tabTournament.classList.add('active');
+    }
+  };
 }());

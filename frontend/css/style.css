@@ -622,6 +622,41 @@ html, body {
 .mode-start:hover { background: var(--color-primary-hover); }
 
 /* ============================================================
+   PICK MODE — TAB CASUAL / TOURNAMENT
+   ============================================================ */
+.ch-tab-bar {
+  display: flex;
+  gap: .375rem;
+  margin-top: .5rem;
+  margin-bottom: .75rem;
+}
+.ch-tab {
+  flex: 1;
+  padding: .5rem 0;
+  font-size: .8125rem;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-2);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.ch-tab.active {
+  background: var(--color-primary);
+  color: #fff;
+}
+.ch-coming-soon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+/* ============================================================
    PLAY PAGE — score row
    ============================================================ */
 .play-row {

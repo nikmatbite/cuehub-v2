@@ -32,10 +32,24 @@
 
     <div class="ch-divider"></div>
 
-    <!-- Mode list -->
-    <div class="section-label mt-2" data-lang="MODE_SELECT"></div>
-    <div id="mode-list">
+    <!-- Tab Casual / Tournament -->
+    <div class="ch-tab-bar" style="display:flex;gap:.375rem;margin-bottom:.75rem;">
+      <button class="ch-tab active" id="tab-casual" onclick="switchTab('casual')" data-lang="TAB_CASUAL"></button>
+      <button class="ch-tab" id="tab-tournament" onclick="switchTab('tournament')" data-lang="TAB_TOURNAMENT"></button>
+    </div>
+
+    <!-- Mode list Casual -->
+    <div id="mode-list" class="tab-panel">
       <!-- diisi oleh JS -->
+    </div>
+
+    <!-- Mode list Tournament -->
+    <div id="mode-list-tournament" class="tab-panel d-none">
+      <div class="ch-coming-soon">
+        <i class="fa-solid fa-trophy" style="font-size:2rem;opacity:.3;margin-bottom:.5rem;"></i>
+        <div style="font-weight:600;margin-bottom:.25rem;" data-lang="COMING_SOON"></div>
+        <div style="font-size:.8rem;color:var(--color-text-muted);" data-lang="COMING_SOON_DESC"></div>
+      </div>
     </div>
 
   </div>
@@ -66,29 +80,29 @@
 <div class="ch-overlay d-none" id="team-config-overlay">
   <div class="ch-sheet">
     <div class="ch-sheet-handle"></div>
-    <div class="ch-sheet-title">Team Battle — Konfigurasi</div>
+    <div class="ch-sheet-title" data-lang="TEAM_CONFIG_TITLE"></div>
 
-    <div class="section-label">Mode rotasi</div>
+    <div class="section-label" data-lang="ROTATION_MODE_LABEL"></div>
     <div style="display:flex;flex-direction:column;gap:.5rem;margin-bottom:1rem;" id="rotation-options">
       <label style="display:flex;align-items:center;gap:.625rem;cursor:pointer;padding:.5rem;border:1px solid var(--color-border);border-radius:var(--radius-sm);">
         <input type="radio" name="rotation" value="fair" style="accent-color:var(--color-primary);" checked />
         <div>
-          <div style="font-size:.875rem;font-weight:500;">Fair Rotation</div>
-          <div style="font-size:.75rem;color:var(--color-text-muted);">Semua kombinasi partner merata</div>
+          <div style="font-size:.875rem;font-weight:500;" data-lang="ROTATION_FAIR"></div>
+          <div style="font-size:.75rem;color:var(--color-text-muted);" data-lang="ROTATION_FAIR_DESC"></div>
         </div>
       </label>
       <label style="display:flex;align-items:center;gap:.625rem;cursor:pointer;padding:.5rem;border:1px solid var(--color-border);border-radius:var(--radius-sm);">
         <input type="radio" name="rotation" value="random" style="accent-color:var(--color-primary);" />
         <div>
-          <div style="font-size:.875rem;font-weight:500;">Random</div>
-          <div style="font-size:.75rem;color:var(--color-text-muted);">Rotasi acak setiap match</div>
+          <div style="font-size:.875rem;font-weight:500;" data-lang="ROTATION_RANDOM"></div>
+          <div style="font-size:.75rem;color:var(--color-text-muted);" data-lang="ROTATION_RANDOM_DESC"></div>
         </div>
       </label>
       <label style="display:flex;align-items:center;gap:.625rem;cursor:pointer;padding:.5rem;border:1px solid var(--color-border);border-radius:var(--radius-sm);">
         <input type="radio" name="rotation" value="manual" style="accent-color:var(--color-primary);" />
         <div>
-          <div style="font-size:.875rem;font-weight:500;">Manual</div>
-          <div style="font-size:.75rem;color:var(--color-text-muted);">Atur sendiri tiap match</div>
+          <div style="font-size:.875rem;font-weight:500;" data-lang="ROTATION_MANUAL"></div>
+          <div style="font-size:.75rem;color:var(--color-text-muted);" data-lang="ROTATION_MANUAL_DESC"></div>
         </div>
       </label>
     </div>
