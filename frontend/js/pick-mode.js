@@ -25,7 +25,7 @@
   var MODES = [
     {
       id:       'duel',
-      icon:     'ti-sword',
+      icon:     'fa-solid fa-person-falling',
       nameKey:  'MODE_SELECT',         // fallback, nama hardcode di bawah
       name:     'Duel',
       descKey:  'MODE_DUEL_DESC',
@@ -33,14 +33,14 @@
     },
     {
       id:       'king_of_table',
-      icon:     'ti-crown',
+      icon:     'fa-solid fa-crown',
       name:     'King of Table',
       descKey:  'MODE_KING_DESC',
       minPlayers: 2
     },
     {
       id:       'team_battle',
-      icon:     'ti-users',
+      icon:     'fa-solid fa-users',
       name:     'Team Battle',
       descKey:  'MODE_TEAM_DESC',
       minPlayers: 4,
@@ -48,28 +48,28 @@
     },
     {
       id:       'singapore',
-      icon:     'ti-award',
+      icon:     'fa-solid fa-medal',
       name:     'Singapore',
       descKey:  'MODE_SG_DESC',
       minPlayers: 3
     },
     {
       id:       'tournament',
-      icon:     'ti-trophy',
+      icon:     'fa-solid fa-trophy',
       name:     'Tournament',
       descKey:  'MODE_TOURN_DESC',
       minPlayers: 4
     },
     {
       id:       'round_robin',
-      icon:     'ti-repeat',
+      icon:     'fa-solid fa-repeat',
       name:     'Round Robin',
       descKey:  'MODE_RR_DESC',
       minPlayers: 3
     },
     {
       id:       'custom',
-      icon:     'ti-adjustments',
+      icon:     'fa-solid fa-sliders',
       name:     'Custom',
       descKey:  'MODE_CUSTOM_DESC',
       minPlayers: 2
