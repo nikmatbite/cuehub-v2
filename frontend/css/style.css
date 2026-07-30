@@ -823,6 +823,21 @@ html, body {
 }
 
 /* ============================================================
+   ICONIFY
+   ============================================================ */
+
+/* Iconify */
+iconify-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1em;
+  height: 1em;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+/* ============================================================
    RESPONSIVE — laptop / TV
    ============================================================ */
 @media (min-width: 480px) {
