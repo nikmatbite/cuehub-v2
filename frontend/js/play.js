@@ -11,6 +11,10 @@
   // ============================================================
   var active = getActiveState();
   var isSubmittingResult = false;
+  window._debugPlay = function() {
+    console.log('allMatches:', JSON.stringify(allMatches, null, 2));
+    console.log('currentMatch:', JSON.stringify(currentMatch, null, 2));
+  };
   if (!active || !active.session_id || !active.session_game_id) {
     goTo('pick-mode.html');
     return;
