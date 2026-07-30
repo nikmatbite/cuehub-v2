@@ -315,61 +315,47 @@
 
     // ── MATCH HEADER ──
     var html =
-      '<div class="duel-section-header" style="margin-bottom:.625rem;">' +
-        '<div class="duel-section-line"></div>' +
-        '<div class="duel-section-icon"><i class="fa-solid fa-circle-dot"></i></div>' +
-        '<div class="duel-section-label">' + getLang('PLAY_NOW_PLAYING') + ' · MATCH #' + matchNo + '</div>' +
-        '<div class="duel-section-icon"><i class="fa-solid fa-circle-dot"></i></div>' +
-        '<div class="duel-section-line"></div>' +
+      '<div class="duel-match-header">' +
+        '<div class="duel-match-label">' + getLang('PLAY_NOW_PLAYING') + '</div>' +
+        '<div class="duel-match-title">MATCH ' + matchNo + '</div>' +
+        '<div class="duel-match-hint">' + getLang('PLAY_WIN_TAP_HINT') + '</div>' +
       '</div>';
 
-    // ── HINT ──
-    html += '<p style="text-align:center;font-size:.75rem;color:var(--color-text-muted);margin-bottom:.625rem;">' +
-      getLang('PLAY_WIN_TAP_HINT') + '</p>';
-
     // ── PLAYER CARDS ──
-    html += renderDuelPlayerCard(p1, wins[p1 && p1.player_id] || 0) +
-      '<div class="duel-vs-divider">' +
-        '<div class="duel-vs-line"></div>' +
-        '<span class="duel-vs-text">' + getLang('PLAY_VS') + '</span>' +
-        '<div class="duel-vs-line"></div>' +
-      '</div>' +
-      renderDuelPlayerCard(p2, wins[p2 && p2.player_id] || 0);
+    html += '<div class="duel-arena">' +
+      renderDuelPlayerCard(p1, wins[p1 && p1.player_id] || 0) +
+      '<div class="duel-vs-badge">VS</div>' +
+      renderDuelPlayerCard(p2, wins[p2 && p2.player_id] || 0) +
+    '</div>';
 
     // ── NEXT MATCH ──
     if (nextRotation && nextRotation.p1 && nextRotation.p2) {
       html +=
-        '<div class="duel-section-header" style="margin-top:.875rem;margin-bottom:.5rem;">' +
+        '<div class="duel-section-row">' +
           '<div class="duel-section-line"></div>' +
-          '<div class="duel-section-icon"><i class="fa-solid fa-forward"></i></div>' +
-          '<div class="duel-section-label">' + getLang('PLAY_NEXT_MATCH') + '</div>' +
-          '<div class="duel-section-icon"><i class="fa-solid fa-forward"></i></div>' +
+          '<span class="duel-section-label">' + getLang('PLAY_NEXT_MATCH') + '</span>' +
           '<div class="duel-section-line"></div>' +
         '</div>' +
         '<div class="duel-next-card">' +
-          makeAvatar(nextRotation.p1.player_name, 'sm') +
           '<span class="duel-next-name">' + esc(nextRotation.p1.player_name) + '</span>' +
-          '<span class="duel-next-vs">' + getLang('PLAY_VS') + '</span>' +
+          '<span class="duel-next-vs">VS</span>' +
           '<span class="duel-next-name">' + esc(nextRotation.p2.player_name) + '</span>' +
-          makeAvatar(nextRotation.p2.player_name, 'sm') +
         '</div>';
 
       // ── QUEUE ──
       if (nextRotation.queue && nextRotation.queue.length) {
         html +=
-          '<div class="duel-section-header" style="margin-top:.75rem;margin-bottom:.5rem;">' +
+          '<div class="duel-section-row">' +
             '<div class="duel-section-line"></div>' +
-            '<div class="duel-section-icon"><i class="fa-solid fa-users"></i></div>' +
-            '<div class="duel-section-label">' + getLang('PLAY_QUEUE_LABEL') + '</div>' +
-            '<div class="duel-section-icon"><i class="fa-solid fa-users"></i></div>' +
+            '<span class="duel-section-label">' + getLang('PLAY_QUEUE_LABEL') + '</span>' +
             '<div class="duel-section-line"></div>' +
           '</div>' +
-          '<div class="duel-queue-chips">';
+          '<div class="duel-queue-grid">';
         nextRotation.queue.forEach(function (p, i) {
-          html += '<span class="duel-queue-chip">' +
-            '<span class="duel-queue-num">' + (i + 1) + '</span>' +
-            esc(p.player_name) +
-            '</span>';
+          html += '<div class="duel-queue-chip">' +
+            '<span class="duel-queue-num">#' + (i + 1) + '</span>' +
+            '<span>' + esc(p.player_name) + '</span>' +
+          '</div>';
         });
         html += '</div>';
       }
@@ -378,29 +364,38 @@
     // ── RIWAYAT ──
     var finished = allMatches.filter(function (m) { return m.status === 'finished'; });
     if (finished.length) {
+      var historyId = 'duel-history-' + Date.now();
       html +=
-        '<div class="duel-section-header" style="margin-top:.875rem;margin-bottom:.5rem;">' +
+        '<div class="duel-section-row" style="margin-top:.875rem;margin-bottom:.375rem;">' +
           '<div class="duel-section-line"></div>' +
-          '<div class="duel-section-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>' +
-          '<div class="duel-section-label">' + getLang('PLAY_HISTORY') + '</div>' +
-          '<div class="duel-section-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>' +
+          '<span class="duel-section-label">' + getLang('PLAY_HISTORY') + '</span>' +
           '<div class="duel-section-line"></div>' +
         '</div>' +
-        '<div class="ch-card" style="padding:.5rem .75rem;">';
+        '<div class="ch-card" style="padding:.375rem .75rem;">' +
+          '<div class="duel-history-toggle" id="' + historyId + '-toggle">' +
+            '<span style="font-size:.8rem;color:var(--color-text-secondary);font-weight:500;">' + getLang('PLAY_HISTORY') + ' (' + finished.length + ')</span>' +
+            '<i class="fa-solid fa-chevron-down" id="' + historyId + '-chevron" style="font-size:.75rem;color:var(--color-text-muted);transition:transform .2s;"></i>' +
+          '</div>' +
+          '<div class="duel-history-rows" id="' + historyId + '-rows" style="display:none;">';
       finished.slice().reverse().forEach(function (m) {
         var mp2    = m.match_players || m.players || [];
         var mP1    = mp2[0] ? findPlayer(mp2[0].player_id) : null;
         var mP2    = mp2[1] ? findPlayer(mp2[1].player_id) : null;
         var winner = m.winner_player ? findPlayer(m.winner_player) : null;
+        var isP1Win = winner && mP1 && winner.player_id === mP1.player_id;
+        var winClass = isP1Win ? 'p1-color' : 'p2-color';
         html += '<div class="duel-history-row">' +
-          '<span style="color:var(--color-text-muted);min-width:4rem;">#' + (m.match_no || '') + '</span>' +
-          '<span style="flex:1;">' +
-            (mP1 ? esc(mP1.player_name) : '?') + ' <span style="color:var(--color-text-muted);">vs</span> ' + (mP2 ? esc(mP2.player_name) : '?') +
+          '<span class="duel-history-match">#' + (m.match_no || '') + '</span>' +
+          '<span class="duel-history-names">' +
+            (mP1 ? esc(mP1.player_name) : '?') + ' vs ' + (mP2 ? esc(mP2.player_name) : '?') +
           '</span>' +
-          '<span style="color:var(--color-success);font-weight:600;">' + (winner ? esc(winner.player_name) : '—') + '</span>' +
+          '<span class="duel-history-winner ' + (winner ? winClass : '') + '">' +
+            '<i class="fa-solid fa-trophy" style="font-size:.65rem;"></i>' +
+            (winner ? esc(winner.player_name) : '—') +
+          '</span>' +
         '</div>';
       });
-      html += '</div>';
+      html += '</div></div>';
     }
 
     matchArea.innerHTML = html;
@@ -416,19 +411,34 @@
     }
 
     attachEndGameListener();
+
+    var histToggle = document.getElementById(historyId + '-toggle');
+    if (histToggle) {
+      histToggle.addEventListener('click', function () {
+        var rows    = document.getElementById(historyId + '-rows');
+        var chevron = document.getElementById(historyId + '-chevron');
+        if (!rows) return;
+        var isOpen = rows.style.display !== 'none';
+        rows.style.display    = isOpen ? 'none' : 'block';
+        chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+      });
+    }
+
     applyLang();
   }
 
-  function renderDuelPlayerCard(player, winCount) {
+  function renderDuelPlayerCard(player, winCount, colorClass) {
     if (!player) {
       return '<div class="duel-player-card" style="opacity:.4;">—</div>';
     }
+    var initial = (player.player_name || '?').charAt(0).toUpperCase();
+    var winsHtml = winCount > 0
+      ? '<span class="duel-player-wins"><i class="fa-solid fa-trophy"></i> WIN &times;' + winCount + '</span>'
+      : '<span style="min-height:1.1rem;display:block;"></span>';
     return '<div class="duel-player-card">' +
-      makeAvatar(player.player_name, '') +
+      '<div class="duel-player-avatar">' + esc(initial) + '</div>' +
       '<div class="duel-player-name">' + esc(player.player_name) + '</div>' +
-      (winCount > 0
-        ? '<span class="duel-player-wins">' + winCount + 'W</span>'
-        : '') +
+      winsHtml +
     '</div>';
   }
 
