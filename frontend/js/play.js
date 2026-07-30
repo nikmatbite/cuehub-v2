@@ -235,11 +235,22 @@
         allMatches.push(data);
         return Api.match.start(data.match_id);
       })
-      .then(function (data) {
-        if (!data.match_players && data.players) {
-          data.match_players = data.players;
+      .then(function (startData) {
+        // start() tidak return players — ambil dari allMatches yang sudah ada
+        var matchInList = null;
+        for (var i = 0; i < allMatches.length; i++) {
+          if (allMatches[i].match_id === startData.match_id) {
+            matchInList = allMatches[i];
+            break;
+          }
         }
-        currentMatch = data;
+        var matchPlayers = matchInList
+          ? (matchInList.players || matchInList.match_players || [])
+          : [];
+        currentMatch = Object.assign({}, startData, {
+          match_players: matchPlayers,
+          players:       matchPlayers
+        });
         isSubmittingResult = false;
         renderMatch(currentMatch);
       })

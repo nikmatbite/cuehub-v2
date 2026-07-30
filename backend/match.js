@@ -116,7 +116,8 @@ var MatchService = {
     withLock(function () { updateRowObject(mmSheet, match._rowIndex, updates); });
     logAction(payload._user_id, 'MATCH_START', payload.match_id);
 
-    return Object.assign({}, MatchService._sanitizeMatch(match), updates);
+    var updatedMatch = Object.assign({}, match, updates);
+    return MatchService._buildMatchResponse(updatedMatch, payload.match_id);
   },
 
   // ===========================================================================
