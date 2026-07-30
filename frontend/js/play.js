@@ -29,6 +29,67 @@
   var pendingRanking = {};     // { player_id: rank } untuk mode singapore/custom
   var hasAnyInput    = false;  // flag: sudah ada input (skor/pemenang) belum
 
+  function calcDuelRotation(excludeOngoing) {
+    // Ambil match yang sudah selesai saja
+    var finished = allMatches.filter(function (m) {
+      return m.status === 'finished';
+    });
+
+    // Hitung lastMatchNo per pemain (0 = belum pernah main)
+    var lastMatchNo = {};
+    players.forEach(function (p) { lastMatchNo[p.player_id] = 0; });
+
+    finished.forEach(function (m) {
+      var mp = m.match_players || m.players || [];
+      mp.forEach(function (mp_entry) {
+        var pid = mp_entry.player_id;
+        var no  = parseInt(m.match_no, 10) || 0;
+        if (!lastMatchNo[pid] || no > lastMatchNo[pid]) {
+          lastMatchNo[pid] = no;
+        }
+      });
+    });
+
+    // Hitung berapa kali tiap pasangan pernah bertemu
+    var meetCount = {};
+    finished.forEach(function (m) {
+      var mp  = m.match_players || m.players || [];
+      var ids = mp.map(function (x) { return x.player_id; });
+      if (ids.length >= 2) {
+        var key = ids.slice().sort().join('|');
+        meetCount[key] = (meetCount[key] || 0) + 1;
+      }
+    });
+
+    // Sort pemain: lastMatchNo ascending (paling lama tidak main = prioritas)
+    var sorted = players.slice().sort(function (a, b) {
+      return (lastMatchNo[a.player_id] || 0) - (lastMatchNo[b.player_id] || 0);
+    });
+
+    // P1 = paling lama tidak main
+    var p1 = sorted[0];
+    var candidates = sorted.slice(1);
+
+    // Dari kandidat, cari P2:
+    // - Prioritas: lastMatchNo paling kecil
+    // - Tiebreaker: paling jarang bertemu P1
+    candidates.sort(function (a, b) {
+      var lastA = lastMatchNo[a.player_id] || 0;
+      var lastB = lastMatchNo[b.player_id] || 0;
+      if (lastA !== lastB) return lastA - lastB;
+
+      // Tiebreaker: frekuensi bertemu P1
+      var keyA = [p1.player_id, a.player_id].sort().join('|');
+      var keyB = [p1.player_id, b.player_id].sort().join('|');
+      return (meetCount[keyA] || 0) - (meetCount[keyB] || 0);
+    });
+
+    var p2    = candidates[0];
+    var queue = candidates.slice(1); // sisa = antrian berikutnya
+
+    return { p1: p1, p2: p2, queue: queue };
+  }
+
   // ============================================================
   // ELEMEN
   // ============================================================
@@ -145,9 +206,23 @@
   // CREATE NEXT MATCH
   // ============================================================
   function createNextMatch() {
+    // Untuk mode duel: hitung rotasi dulu di frontend
+    var playerIds;
+    if (gameMode === 'duel') {
+      var rotation = calcDuelRotation();
+      if (!rotation.p1 || !rotation.p2) {
+        showMatchError(getLang('PLAY_RETRY'));
+        return;
+      }
+      // Kirim p1 duluan agar backend simpan urutan yang benar
+      playerIds = [rotation.p1.player_id, rotation.p2.player_id];
+    } else {
+      playerIds = players.map(function (p) { return p.player_id; });
+    }
+
     var payload = {
       session_game_id: sessionGameId,
-      player_ids:      players.map(function (p) { return p.player_id; })
+      players:         playerIds
     };
 
     Api.match.create(payload)
@@ -223,31 +298,204 @@
     var mp = match.match_players || [];
     var p1 = mp[0] ? findPlayer(mp[0].player_id) : null;
     var p2 = mp[1] ? findPlayer(mp[1].player_id) : null;
+    var matchNo = match.match_no || allMatches.length;
 
-    var matchNo = match.match_no || (allMatches.length);
+    // Hitung win count per pemain dari riwayat
+    var wins = {};
+    players.forEach(function (p) { wins[p.player_id] = 0; });
+    allMatches.forEach(function (m) {
+      if (m.status === 'finished' && m.winner_player) {
+        wins[m.winner_player] = (wins[m.winner_player] || 0) + 1;
+      }
+    });
 
-    matchArea.innerHTML =
-      '<div class="section-label">MATCH #' + matchNo + '</div>' +
-      '<div class="ch-card" style="margin-bottom:.5rem;">' +
-        renderScoreRow(p1, true) +
-        '<div style="text-align:center;font-size:.75rem;color:var(--color-text-muted);padding:.35rem 0;font-weight:500;">VS</div>' +
-        renderScoreRow(p2, true) +
+    // Hitung next match & queue dari rotasi
+    // Simulasi seolah match ini sudah selesai untuk kalkulasi next
+    var nextRotation = calcDuelNextAfterCurrent(match, p1, p2);
+
+    // ── MATCH HEADER ──
+    var html =
+      '<div class="duel-section-header" style="margin-bottom:.625rem;">' +
+        '<div class="duel-section-line"></div>' +
+        '<div class="duel-section-icon"><i class="fa-solid fa-circle-dot"></i></div>' +
+        '<div class="duel-section-label">' + getLang('PLAY_NOW_PLAYING') + ' · MATCH #' + matchNo + '</div>' +
+        '<div class="duel-section-icon"><i class="fa-solid fa-circle-dot"></i></div>' +
+        '<div class="duel-section-line"></div>' +
+      '</div>';
+
+    // ── HINT ──
+    html += '<p style="text-align:center;font-size:.75rem;color:var(--color-text-muted);margin-bottom:.625rem;">' +
+      getLang('PLAY_WIN_TAP_HINT') + '</p>';
+
+    // ── PLAYER CARDS ──
+    html += renderDuelPlayerCard(p1, wins[p1 && p1.player_id] || 0) +
+      '<div class="duel-vs-divider">' +
+        '<div class="duel-vs-line"></div>' +
+        '<span class="duel-vs-text">' + getLang('PLAY_VS') + '</span>' +
+        '<div class="duel-vs-line"></div>' +
       '</div>' +
-      renderMatchHistory();
+      renderDuelPlayerCard(p2, wins[p2 && p2.player_id] || 0);
 
+    // ── NEXT MATCH ──
+    if (nextRotation && nextRotation.p1 && nextRotation.p2) {
+      html +=
+        '<div class="duel-section-header" style="margin-top:.875rem;margin-bottom:.5rem;">' +
+          '<div class="duel-section-line"></div>' +
+          '<div class="duel-section-icon"><i class="fa-solid fa-forward"></i></div>' +
+          '<div class="duel-section-label">' + getLang('PLAY_NEXT_MATCH') + '</div>' +
+          '<div class="duel-section-icon"><i class="fa-solid fa-forward"></i></div>' +
+          '<div class="duel-section-line"></div>' +
+        '</div>' +
+        '<div class="duel-next-card">' +
+          makeAvatar(nextRotation.p1.player_name, 'sm') +
+          '<span class="duel-next-name">' + esc(nextRotation.p1.player_name) + '</span>' +
+          '<span class="duel-next-vs">' + getLang('PLAY_VS') + '</span>' +
+          '<span class="duel-next-name">' + esc(nextRotation.p2.player_name) + '</span>' +
+          makeAvatar(nextRotation.p2.player_name, 'sm') +
+        '</div>';
+
+      // ── QUEUE ──
+      if (nextRotation.queue && nextRotation.queue.length) {
+        html +=
+          '<div class="duel-section-header" style="margin-top:.75rem;margin-bottom:.5rem;">' +
+            '<div class="duel-section-line"></div>' +
+            '<div class="duel-section-icon"><i class="fa-solid fa-users"></i></div>' +
+            '<div class="duel-section-label">' + getLang('PLAY_QUEUE_LABEL') + '</div>' +
+            '<div class="duel-section-icon"><i class="fa-solid fa-users"></i></div>' +
+            '<div class="duel-section-line"></div>' +
+          '</div>' +
+          '<div class="duel-queue-chips">';
+        nextRotation.queue.forEach(function (p, i) {
+          html += '<span class="duel-queue-chip">' +
+            '<span class="duel-queue-num">' + (i + 1) + '</span>' +
+            esc(p.player_name) +
+            '</span>';
+        });
+        html += '</div>';
+      }
+    }
+
+    // ── RIWAYAT ──
+    var finished = allMatches.filter(function (m) { return m.status === 'finished'; });
+    if (finished.length) {
+      html +=
+        '<div class="duel-section-header" style="margin-top:.875rem;margin-bottom:.5rem;">' +
+          '<div class="duel-section-line"></div>' +
+          '<div class="duel-section-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>' +
+          '<div class="duel-section-label">' + getLang('PLAY_HISTORY') + '</div>' +
+          '<div class="duel-section-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>' +
+          '<div class="duel-section-line"></div>' +
+        '</div>' +
+        '<div class="ch-card" style="padding:.5rem .75rem;">';
+      finished.slice().reverse().forEach(function (m) {
+        var mp2    = m.match_players || m.players || [];
+        var mP1    = mp2[0] ? findPlayer(mp2[0].player_id) : null;
+        var mP2    = mp2[1] ? findPlayer(mp2[1].player_id) : null;
+        var winner = m.winner_player ? findPlayer(m.winner_player) : null;
+        html += '<div class="duel-history-row">' +
+          '<span style="color:var(--color-text-muted);min-width:4rem;">#' + (m.match_no || '') + '</span>' +
+          '<span style="flex:1;">' +
+            (mP1 ? esc(mP1.player_name) : '?') + ' <span style="color:var(--color-text-muted);">vs</span> ' + (mP2 ? esc(mP2.player_name) : '?') +
+          '</span>' +
+          '<span style="color:var(--color-success);font-weight:600;">' + (winner ? esc(winner.player_name) : '—') + '</span>' +
+        '</div>';
+      });
+      html += '</div>';
+    }
+
+    matchArea.innerHTML = html;
     actionsBar.innerHTML = buildEndGameBtn();
 
-    // FIX: bind dengan array player yang sudah divalidasi
-    var winnerBtns = matchArea.querySelectorAll('.play-winner-btn');
-    if (winnerBtns[0] && p1) {
-      winnerBtns[0].addEventListener('click', function () { confirmWinner(p1); });
+    // Bind klik player card
+    var cards = matchArea.querySelectorAll('.duel-player-card');
+    if (cards[0] && p1) {
+      cards[0].addEventListener('click', function () { confirmWinner(p1); });
     }
-    if (winnerBtns[1] && p2) {
-      winnerBtns[1].addEventListener('click', function () { confirmWinner(p2); });
+    if (cards[1] && p2) {
+      cards[1].addEventListener('click', function () { confirmWinner(p2); });
     }
 
     attachEndGameListener();
     applyLang();
+  }
+
+  function renderDuelPlayerCard(player, winCount) {
+    if (!player) {
+      return '<div class="duel-player-card" style="opacity:.4;">—</div>';
+    }
+    return '<div class="duel-player-card">' +
+      makeAvatar(player.player_name, '') +
+      '<div class="duel-player-name">' + esc(player.player_name) + '</div>' +
+      (winCount > 0
+        ? '<span class="duel-player-wins">' + winCount + 'W</span>'
+        : '') +
+      '<i class="fa-solid fa-hand-pointer" style="color:var(--color-text-muted);font-size:.85rem;"></i>' +
+    '</div>';
+  }
+
+  // Hitung next match seolah match saat ini sudah selesai
+  // (tanpa tahu siapa menang, kita simulasi keduanya sudah main)
+  function calcDuelNextAfterCurrent(match, p1, p2) {
+    if (!p1 || !p2) return null;
+
+    // Buat salinan allMatches + tambahkan match saat ini sebagai "finished"
+    var simulatedFinished = allMatches.filter(function (m) {
+      return m.status === 'finished';
+    }).concat([{
+      match_id:      match.match_id,
+      match_no:      match.match_no,
+      status:        'finished',
+      winner_player: '',
+      match_players: match.match_players || []
+    }]);
+
+    // Hitung lastMatchNo dari simulasi
+    var lastMatchNo = {};
+    players.forEach(function (p) { lastMatchNo[p.player_id] = 0; });
+    simulatedFinished.forEach(function (m) {
+      var mp = m.match_players || m.players || [];
+      mp.forEach(function (entry) {
+        var pid = entry.player_id;
+        var no  = parseInt(m.match_no, 10) || 0;
+        if (!lastMatchNo[pid] || no > lastMatchNo[pid]) {
+          lastMatchNo[pid] = no;
+        }
+      });
+    });
+
+    // Hitung meetCount dari simulasi
+    var meetCount = {};
+    simulatedFinished.forEach(function (m) {
+      var mp  = m.match_players || m.players || [];
+      var ids = mp.map(function (x) { return x.player_id; });
+      if (ids.length >= 2) {
+        var key = ids.slice().sort().join('|');
+        meetCount[key] = (meetCount[key] || 0) + 1;
+      }
+    });
+
+    // Sort
+    var sorted = players.slice().sort(function (a, b) {
+      return (lastMatchNo[a.player_id] || 0) - (lastMatchNo[b.player_id] || 0);
+    });
+
+    var nextP1     = sorted[0];
+    var candidates = sorted.slice(1);
+
+    candidates.sort(function (a, b) {
+      var lastA = lastMatchNo[a.player_id] || 0;
+      var lastB = lastMatchNo[b.player_id] || 0;
+      if (lastA !== lastB) return lastA - lastB;
+      var keyA = [nextP1.player_id, a.player_id].sort().join('|');
+      var keyB = [nextP1.player_id, b.player_id].sort().join('|');
+      return (meetCount[keyA] || 0) - (meetCount[keyB] || 0);
+    });
+
+    return {
+      p1:    nextP1,
+      p2:    candidates[0] || null,
+      queue: candidates.slice(1)
+    };
   }
 
   // ============================================================

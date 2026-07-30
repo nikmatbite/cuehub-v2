@@ -622,6 +622,138 @@ html, body {
 .mode-start:hover { background: var(--color-primary-hover); }
 
 /* ============================================================
+   PLAY PAGE — DUEL MODE
+   ============================================================ */
+.duel-section-header {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin-bottom: .5rem;
+}
+.duel-section-header .duel-section-line {
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+.duel-section-header .duel-section-label {
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+.duel-section-header .duel-section-icon {
+  font-size: .7rem;
+  color: var(--color-text-muted);
+}
+
+.duel-player-card {
+  display: flex;
+  align-items: center;
+  gap: .875rem;
+  padding: .875rem 1rem;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  cursor: pointer;
+  transition: border-color .15s, background .15s, transform .1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.duel-player-card:active {
+  transform: scale(.98);
+}
+.duel-player-card.duel-player-active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+.duel-player-card .duel-player-name {
+  flex: 1;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+.duel-player-card .duel-player-wins {
+  font-size: .75rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+  border-radius: 20px;
+  padding: .15rem .5rem;
+}
+
+.duel-vs-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .625rem;
+  padding: .35rem 0;
+}
+.duel-vs-divider .duel-vs-line {
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+.duel-vs-text {
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  color: var(--color-text-muted);
+}
+
+.duel-next-card {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .625rem .875rem;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+}
+.duel-next-name {
+  font-size: .875rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+.duel-next-vs {
+  font-size: .7rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  padding: 0 .25rem;
+}
+
+.duel-queue-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem;
+}
+.duel-queue-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  padding: .2rem .625rem;
+  font-size: .75rem;
+  color: var(--color-text-secondary);
+}
+.duel-queue-chip .duel-queue-num {
+  font-size: .65rem;
+  color: var(--color-text-muted);
+}
+
+.duel-history-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: .3rem 0;
+  font-size: .8rem;
+}
+.duel-history-row + .duel-history-row {
+  border-top: 1px solid var(--color-border);
+}
+
+/* ============================================================
    PICK MODE — TAB CASUAL / TOURNAMENT
    ============================================================ */
 .ch-tab-bar {
