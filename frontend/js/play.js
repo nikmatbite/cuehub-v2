@@ -429,7 +429,6 @@
       (winCount > 0
         ? '<span class="duel-player-wins">' + winCount + 'W</span>'
         : '') +
-      '<i class="fa-solid fa-hand-pointer" style="color:var(--color-text-muted);font-size:.85rem;"></i>' +
     '</div>';
   }
 
