@@ -224,12 +224,13 @@
       var kingRotation = calcKingRotation();
 
       if (!kingRotation.king) {
-        // Match pertama — belum ada king, pakai 2 pemain pertama
+        // Match pertama — shuffle dulu sebelum ambil 2 pertama
         if (players.length < 2) {
             showMatchError(getLang('PLAY_RETRY'));
             return;
         }
-        playerIds = [players[0].player_id, players[1].player_id];
+        var shuffled = players.slice().sort(function() { return Math.random() - 0.5; });
+        playerIds = [shuffled[0].player_id, shuffled[1].player_id];
       } else if (!kingRotation.challenger) {
         showMatchError(getLang('PLAY_RETRY'));
         return;
