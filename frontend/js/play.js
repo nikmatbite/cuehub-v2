@@ -526,11 +526,11 @@
   // MODE: KING OF TABLE
   // ============================================================
   function calcKingRotation() {
-    // Urutkan pemain berdasarkan match_no terakhir mereka (ascending = paling lama tidak main)
     var finished = allMatches.filter(function (m) {
       return m.status === 'finished';
     });
 
+    // Hitung lastMatchNo per pemain — siapa terakhir kali main
     var lastMatchNo = {};
     players.forEach(function (p) { lastMatchNo[p.player_id] = 0; });
 
@@ -543,7 +543,7 @@
       });
     });
 
-    // King = pemenang match terakhir; kalau belum ada, ambil dari currentMatch p1
+    // King = pemenang match terakhir yang selesai
     var king = null;
     if (finished.length) {
       var lastFinished = finished.slice().sort(function (a, b) {
@@ -551,22 +551,24 @@
       })[0];
       king = findPlayer(lastFinished.winner_player);
     }
+    // Fallback: belum ada match selesai, king = p1 di currentMatch
     if (!king && currentMatch) {
       var mp0 = (currentMatch.match_players || [])[0];
       if (mp0) king = findPlayer(mp0.player_id);
     }
 
-    // Antrian = semua pemain kecuali king, urut dari paling lama tidak main
+    // Antrian = semua pemain kecuali king
+    // Urut ascending lastMatchNo — yang paling lama tidak main = duluan
     var queue = players.filter(function (p) {
       return !king || p.player_id !== king.player_id;
     }).sort(function (a, b) {
       return (lastMatchNo[a.player_id] || 0) - (lastMatchNo[b.player_id] || 0);
     });
 
-    var challenger = queue[0] || null;
-    var waiting    = queue.slice(1);
+    var challenger  = queue[0] || null;
+    var waiting     = queue.slice(1);
 
-    // Hitung streak king saat ini
+    // Hitung streak king
     var streak = 0;
     if (king && finished.length) {
       var sorted = finished.slice().sort(function (a, b) {
