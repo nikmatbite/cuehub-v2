@@ -657,7 +657,7 @@
         '<div class="king-queue-grid">';
       queueRest.forEach(function (p, i) {
         html += '<div class="king-queue-chip">' +
-          '<span class="king-queue-num">#' + (i + 2) + '</span>' +
+          '<span class="king-queue-num">#' + (i + 1) + '</span>' +  // ganti i+2 → i+1
           '<span>' + esc(p.player_name) + '</span>' +
         '</div>';
       });
