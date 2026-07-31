@@ -220,6 +220,13 @@
       }
       // Kirim p1 duluan agar backend simpan urutan yang benar
       playerIds = [rotation.p1.player_id, rotation.p2.player_id];
+    } else if (gameMode === 'king_of_table') {
+      var kingRotation = calcKingRotation();
+      if (!kingRotation.king || !kingRotation.challenger) {
+        showMatchError(getLang('PLAY_RETRY'));
+        return;
+      }
+      playerIds = [kingRotation.king.player_id, kingRotation.challenger.player_id];
     } else {
       playerIds = players.map(function (p) { return p.player_id; });
     }
