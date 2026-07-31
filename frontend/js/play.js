@@ -525,34 +525,156 @@
   // ============================================================
   // MODE: KING OF TABLE
   // ============================================================
+  function calcKingStreak() {
+    // Hitung win streak SAAT INI dari king aktif
+    // Iterasi dari match terakhir ke awal, hitung berapa kali menang berturut-turut
+    var finished = allMatches.filter(function (m) {
+      return m.status === 'finished' && m.winner_player;
+    });
+    if (!finished.length) return { playerId: null, streak: 0 };
+
+    // Sort by match_no ascending
+    finished = finished.slice().sort(function (a, b) {
+      return (parseInt(a.match_no, 10) || 0) - (parseInt(b.match_no, 10) || 0);
+    });
+
+    var lastWinner = finished[finished.length - 1].winner_player;
+    var streak = 0;
+    for (var i = finished.length - 1; i >= 0; i--) {
+      if (finished[i].winner_player === lastWinner) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    return { playerId: lastWinner, streak: streak };
+  }
+
   function renderKing(match) {
     var mp = match.match_players || [];
-    var p1 = mp[0] ? findPlayer(mp[0].player_id) : null;
-    var p2 = mp[1] ? findPlayer(mp[1].player_id) : null;
     var matchNo = match.match_no || allMatches.length;
 
-    // Hitung king (pemain dengan win terbanyak)
-    var winCounts = {};
-    allMatches.forEach(function (m) {
-      if (m.status === 'finished' && m.winner_player) {
-        winCounts[m.winner_player] = (winCounts[m.winner_player] || 0) + 1;
-      }
-    });
-    var kingId = null;
-    var maxWin = 0;
-    Object.keys(winCounts).forEach(function (pid) {
-      if (winCounts[pid] > maxWin) { maxWin = winCounts[pid]; kingId = pid; }
-    });
+    // Tentukan siapa King dan siapa Challenger
+    // King = pemenang match terakhir yang selesai (atau p1 kalau belum ada)
+    var streakData = calcKingStreak();
+    var kingId = streakData.playerId;
+    var streak = streakData.streak;
 
-    matchArea.innerHTML =
-      '<div class="section-label">MATCH #' + matchNo + '</div>' +
-      '<div class="ch-card" style="margin-bottom:.5rem;">' +
-        renderKingRow(p1, match, kingId) +
-        '<div style="text-align:center;font-size:.75rem;color:var(--color-text-muted);padding:.35rem 0;font-weight:500;">VS</div>' +
-        renderKingRow(p2, match, kingId) +
-      '</div>' +
-      renderQueuePreview() +
-      renderMatchHistory();
+    // Kalau belum ada match selesai, king = p1 (pemain pertama di match ini)
+    var p1obj = mp[0] || null;
+    var p2obj = mp[1] || null;
+    if (!kingId && p1obj) {
+      kingId = p1obj.player_id;
+    }
+
+    var king = null;
+    var challenger = null;
+    if (p1obj && p2obj) {
+      if (p1obj.player_id === kingId) {
+        king = findPlayer(p1obj.player_id);
+        challenger = findPlayer(p2obj.player_id);
+      } else {
+        king = findPlayer(p2obj.player_id);
+        challenger = findPlayer(p1obj.player_id);
+      }
+    }
+
+    // Next: pemenang match ini vs antrian #1
+    var nextChallenger = null;
+    if (queueState.length) {
+      nextChallenger = findPlayer(queueState[0].player_id);
+    }
+
+    // ── MATCH HEADER ──
+    var html =
+      '<div class="king-match-header">' +
+        '<div class="king-match-label">' + getLang('PLAY_NOW_PLAYING') + '</div>' +
+        '<div class="king-match-title">MATCH ' + matchNo + '</div>' +
+        '<div class="king-match-hint">' + getLang('PLAY_WIN_TAP_HINT') + '</div>' +
+      '</div>';
+
+    // ── ARENA ──
+    html += '<div class="king-arena">' +
+      renderKingPlayerCard(king, streak, true) +
+      '<div class="king-vs-badge">VS</div>' +
+      renderKingPlayerCard(challenger, 0, false) +
+    '</div>';
+
+    // ── NEXT MATCH ──
+    if (nextChallenger) {
+      html +=
+        '<div class="king-section-row">' +
+          '<div class="king-section-line"></div>' +
+          '<span class="king-section-label">' + getLang('PLAY_NEXT_MATCH') + '</span>' +
+          '<div class="king-section-line"></div>' +
+        '</div>' +
+        '<div class="king-next-card">' +
+          '<span class="king-next-winner">' + getLang('PLAY_WINNER') + '</span>' +
+          '<span class="king-next-vs">VS</span>' +
+          '<span class="king-next-name">' + esc(nextChallenger.player_name) + '</span>' +
+        '</div>';
+    }
+
+    // ── QUEUE ──
+    var queueForDisplay = queueState.slice(nextChallenger ? 1 : 0);
+    if (queueForDisplay.length) {
+      html +=
+        '<div class="king-section-row">' +
+          '<div class="king-section-line"></div>' +
+          '<span class="king-section-label">' + getLang('PLAY_QUEUE_LABEL') + '</span>' +
+          '<div class="king-section-line"></div>' +
+        '</div>' +
+        '<div class="king-queue-grid">';
+      queueForDisplay.forEach(function (q, i) {
+        var p = findPlayer(q.player_id);
+        if (!p) return;
+        html += '<div class="king-queue-chip">' +
+          '<span class="king-queue-num">#' + (i + 2) + '</span>' +
+          '<span>' + esc(p.player_name) + '</span>' +
+        '</div>';
+      });
+      html += '</div>';
+    }
+
+    // ── RIWAYAT ──
+    var finished = allMatches.filter(function (m) { return m.status === 'finished'; });
+    if (finished.length) {
+      var historyId = 'king-history-' + Date.now();
+      html +=
+        '<div class="king-section-row" style="margin-top:.875rem;margin-bottom:.375rem;">' +
+          '<div class="king-section-line"></div>' +
+          '<span class="king-section-label">' + getLang('PLAY_HISTORY') + '</span>' +
+          '<div class="king-section-line"></div>' +
+        '</div>' +
+        '<div class="ch-card" style="padding:.375rem .75rem;">' +
+          '<div class="king-history-toggle" id="' + historyId + '-toggle">' +
+            '<span style="font-size:.8rem;color:var(--color-text-secondary);font-weight:500;">' + getLang('PLAY_HISTORY') + ' (' + finished.length + ')</span>' +
+            '<i class="fa-solid fa-chevron-down" id="' + historyId + '-chevron" style="font-size:.75rem;color:var(--color-text-muted);transition:transform .2s;"></i>' +
+          '</div>' +
+          '<div class="king-history-rows" id="' + historyId + '-rows" style="display:none;">';
+      finished.slice().reverse().forEach(function (m) {
+        var mp2 = m.match_players || m.players || [];
+        var mKing = null;
+        var mChallenger = null;
+        // King di match itu = yang bukan penantang baru (heuristik: pakai winner_player kalau menang = tetap king)
+        var mP1 = mp2[0] ? findPlayer(mp2[0].player_id) : null;
+        var mP2 = mp2[1] ? findPlayer(mp2[1].player_id) : null;
+        var winner = m.winner_player ? findPlayer(m.winner_player) : null;
+        html += '<div class="king-history-row">' +
+          '<span class="king-history-match">#' + (m.match_no || '') + '</span>' +
+          '<span class="king-history-names">' +
+            (mP1 ? esc(mP1.player_name) : '?') + ' vs ' + (mP2 ? esc(mP2.player_name) : '?') +
+          '</span>' +
+          '<span class="king-history-winner">' +
+            '<i class="fa-solid fa-crown" style="font-size:.65rem;"></i> ' +
+            (winner ? esc(winner.player_name) : '—') +
+          '</span>' +
+        '</div>';
+      });
+      html += '</div></div>';
+    }
+
+    matchArea.innerHTML = html;
 
     actionsBar.innerHTML =
       '<button class="btn-ch-outline" style="flex:0 0 auto;padding:.6rem .875rem;" id="btn-queue">' +
@@ -561,31 +683,54 @@
       '</button>' +
       buildEndGameBtn();
 
+    // Bind klik card
+    var cards = matchArea.querySelectorAll('.king-player-card');
+    if (cards[0] && king) {
+      cards[0].addEventListener('click', function () { confirmWinner(king); });
+    }
+    if (cards[1] && challenger) {
+      cards[1].addEventListener('click', function () { confirmWinner(challenger); });
+    }
+
     document.getElementById('btn-queue').addEventListener('click', openQueueSheet);
     attachEndGameListener();
 
-    var winnerBtns = matchArea.querySelectorAll('.play-winner-btn');
-    if (winnerBtns[0] && p1) {
-      winnerBtns[0].addEventListener('click', function () { confirmWinner(p1); });
-    }
-    if (winnerBtns[1] && p2) {
-      winnerBtns[1].addEventListener('click', function () { confirmWinner(p2); });
+    // Toggle riwayat
+    var histId = 'king-history-' + (finished.length ? matchNo : '');
+    var histToggle = matchArea.querySelector('.king-history-toggle');
+    if (histToggle) {
+      histToggle.addEventListener('click', function () {
+        var rows    = histToggle.parentElement.querySelector('.king-history-rows');
+        var chevron = histToggle.querySelector('i.fa-chevron-down');
+        if (!rows) return;
+        var isOpen = rows.style.display !== 'none';
+        rows.style.display      = isOpen ? 'none' : 'block';
+        chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+      });
     }
 
-    loadQueue();
     applyLang();
   }
 
-  function renderKingRow(player, match, kingId) {
-    if (!player) return '<div style="padding:.5rem;color:var(--color-text-muted);font-size:.8rem;">Pemain tidak ditemukan</div>';
-    var isKing = player.player_id === kingId;
-    var name   = esc(player.player_name) + (isKing ? ' <span style="color:#EF9F27;">♛</span>' : '');
-    return '<div class="play-winner-btn" style="display:flex;align-items:center;gap:.625rem;padding:.5rem;cursor:pointer;border-radius:var(--radius-sm);' +
-      (isKing ? 'background:var(--color-primary-soft);' : '') + '">' +
-      makeAvatar(player.player_name, '') +
-      '<div style="flex:1;font-size:.875rem;font-weight:500;">' + name + '</div>' +
-      '<i class="fa-solid fa-chevron-right" style="color:var(--color-text-muted);font-size:.875rem;"></i>' +
-      '</div>';
+  function renderKingPlayerCard(player, streak, isKing) {
+    if (!player) {
+      return '<div class="king-player-card" style="opacity:.4;">—</div>';
+    }
+    var cardClass = 'king-player-card' + (isKing ? ' is-king' : '');
+    var badgeClass = isKing ? 'badge-king' : 'badge-challenger';
+    var badgeText  = isKing ? 'KING' : 'CHALLENGER';
+    var avatarContent = isKing
+      ? '<i class="fa-solid fa-crown"></i>'
+      : '<i class="fa-solid fa-user"></i>';
+    var streakHtml = (isKing && streak > 1)
+      ? '<span class="king-player-streak"><i class="fa-solid fa-fire"></i> WIN STREAK &times;' + streak + '</span>'
+      : '<span style="min-height:1.1rem;display:block;"></span>';
+    return '<div class="' + cardClass + '">' +
+      '<span class="king-role-badge ' + badgeClass + '">' + badgeText + '</span>' +
+      '<div class="king-player-avatar">' + avatarContent + '</div>' +
+      '<div class="king-player-name">' + esc(player.player_name) + '</div>' +
+      streakHtml +
+    '</div>';
   }
 
   // ============================================================
