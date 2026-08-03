@@ -605,15 +605,31 @@
 
   function renderKing(match) {
     var matchNo  = match.match_no || allMatches.length;
-    var rotation = calcKingRotation();
-    var king        = rotation.king;
-    var challenger  = rotation.challenger;
-    var waiting     = rotation.waiting;
-    var streak      = rotation.streak;
+    var finished = allMatches.filter(function (m) { return m.status === 'finished'; });
+    
+    var king, challenger, waiting, streak;
+    
+    if (finished.length === 0) {
+        // Match pertama — ambil langsung dari match_players server
+        var mp = match.match_players || [];
+        king = mp[0] ? findPlayer(mp[0].player_id) : null;
+        challenger = mp[1] ? findPlayer(mp[1].player_id) : null;
+        waiting = players.filter(function (p) {
+            return p.player_id !== (king && king.player_id) && 
+                   p.player_id !== (challenger && challenger.player_id);
+        });
+        streak = 0;
+    } else {
+        // Match berikutnya — gunakan rotasi logic
+        var rotation = calcKingRotation();
+        king = rotation.king;
+        challenger = rotation.challenger;
+        waiting = rotation.waiting;
+        streak = rotation.streak;
+    }
 
     // Next challenger = waiting[0]
     var nextChallenger = waiting[0] || null;
-    // Sisa antrian setelah next challenger
     var queueRest = waiting.slice(1);
 
     // ── MATCH HEADER ──
