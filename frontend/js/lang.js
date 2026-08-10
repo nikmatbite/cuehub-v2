@@ -84,6 +84,9 @@ var STRINGS = {
     DASH_WELCOME: {
 		id: 'Selamat datang,',
 		en: 'Welcome' },
+	DASH_BADGE_SUCCESS: {
+        id: 'Selesai',
+        en: 'Finished' },
     DASH_TOTAL_SESSION: {
 		id: 'Total sesi',
 		en: 'Total sessions' },
@@ -177,6 +180,21 @@ var STRINGS = {
 		en: 'Player name already exists.' },
 
     // Game Mode
+	MODE_DUEL: {
+        id: 'Duel',
+        en: 'Duel' },
+    MODE_KING_OF_TABLE: {
+        id: 'Raja Meja ♛',
+        en: 'King of Table ♛' },
+    MODE_TEAM_BATTLE: {
+        id: 'Team Battle',
+        en: 'Team Battle' },
+    MODE_SINGAPORE: {
+        id: 'Singapore',
+        en: 'Singapore' },
+    MODE_CUSTOM: {
+        id: 'Kustom',
+        en: 'Custom' },
     MODE_SELECT: {
 		id: 'Mode permainan',
 		en: 'Game mode' },
@@ -381,7 +399,22 @@ var STRINGS = {
 		id: 'Pemain tidak cukup untuk mode ini.',
 		en: 'Not enough players for this mode.' },
 
-    PLAY_PICK_WINNER: {
+    PLAY_MATCH_LABEL: {
+        id: 'Match',
+        en: 'Match' },
+    PLAY_ROUND_LABEL: {
+        id: 'Ronde',
+        en: 'Round' },
+    PLAY_KING_BADGE: {
+        id: 'KING',
+        en: 'KING' },
+    PLAY_CHALLENGER_BADGE: {
+        id: 'PENANTANG',
+        en: 'CHALLENGER' },
+    PLAY_WIN_STREAK_LABEL: {
+        id: 'MENANG BERUNTUN',
+        en: 'WIN STREAK' },
+	PLAY_PICK_WINNER: {
 		id: 'Pilih Pemenang',
 		en: 'Pick Winner' },
     PLAY_WIN_LABEL: {
@@ -465,9 +498,45 @@ var STRINGS = {
     PLAY_TEAM_WIN: {
 		id: 'Tim',
 		en: 'Team' },
+	PLAY_TEAM_A: {
+        id: 'TIM A',
+        en: 'TEAM A' },
+    PLAY_TEAM_B: {
+        id: 'TIM B',
+        en: 'TEAM B' },
+    PLAY_TEAM_A_SHORT: {
+        id: 'A',
+        en: 'A' },
+    PLAY_TEAM_B_SHORT: {
+        id: 'B',
+        en: 'B' },
+    PLAY_NO_PLAYERS_IN_TEAM: {
+        id: 'Tidak ada pemain di tim ini',
+        en: 'No players in this team' },
     PLAY_CONFIRM_WIN_TITLE: {
 		id: 'Konfirmasi Pemenang',
 		en: 'Confirm Winner' },
+	PLAY_STANDINGS: {
+        id: 'KLASEMEN',
+        en: 'STANDINGS' },
+    PLAY_WIN_COUNT_SUFFIX: {
+        id: 'W',
+        en: 'W' },
+    PLAY_TOURNAMENT_PROGRESS: {
+        id: 'PROGRESS TURNAMEN',
+        en: 'TOURNAMENT PROGRESS' },
+    PLAY_ADD_TO_QUEUE: {
+        id: 'TAMBAH KE ANTRIAN',
+        en: 'ADD TO QUEUE' },
+    PLAY_NO_BRACKET_DATA: {
+        id: 'Belum ada data bracket.',
+        en: 'No bracket data yet.' },
+    PLAY_NO_PLAYER_DATA: {
+        id: 'Data pemain tidak ditemukan. Kembali dan pilih pemain ulang.',
+        en: 'Player data not found. Go back and select players again.' },
+    PLAY_MATCH_FINISHED_SUFFIX: {
+        id: 'selesai',
+        en: 'finished' },
     PLAY_SUMMARY_MODE: {
 		id: 'Mode',
 		en: 'Mode' },

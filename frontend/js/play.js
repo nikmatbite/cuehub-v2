@@ -126,19 +126,6 @@
   var bracketOverlay = document.getElementById('bracket-overlay');
   var bracketContent = document.getElementById('bracket-content');
 
-  // ============================================================
-  // MODE LABELS
-  // ============================================================
-  var MODE_LABELS = {
-    duel:          'Duel',
-    king_of_table: 'King of Table ♛',
-    team_battle:   'Team Battle',
-    singapore:     'Singapore',
-    tournament:    'Tournament',
-    round_robin:   'Round Robin',
-    custom:        'Custom'
-  };
-
   function makeAvatar(name, size) {
     // Coba pakai fungsi global dari app.js jika ada
     if (typeof window.makeAvatar === 'function') {
@@ -153,15 +140,29 @@
   var ICON_END_GAME = '<i class="fa-solid fa-square"></i>';
 
   // ============================================================
+  // LABEL MODE
+  // ============================================================
+  function getModeLabel(mode) {
+  var modeKeys = {
+    'duel':          'MODE_DUEL',
+    'king_of_table': 'MODE_KING_OF_TABLE',
+    'team_battle':   'MODE_TEAM_BATTLE',
+    'singapore':     'MODE_SINGAPORE',
+    'custom':        'MODE_CUSTOM'
+  };
+  return getLang(modeKeys[mode] || 'MODE_DUEL');
+}
+
+  // ============================================================
   // INIT
   // ============================================================
   function init() {
-    topbarTitle.textContent = MODE_LABELS[gameMode] || gameMode;
+    topbarTitle.textContent = getModeLabel(gameMode);
     topbarBadge.classList.remove('d-none');
     applyTheme(getCurrentTheme());
     if (!players || players.length === 0) {
       hidePlayLoading();
-      showMatchError('Data pemain tidak ditemukan. Kembali dan pilih pemain ulang.');
+      showMatchError(getLang('PLAY_NO_PLAYER_DATA'));
       btnBack.classList.remove('d-none');
       return;
     }
@@ -301,8 +302,6 @@
       case 'king_of_table': renderKing(match);       break;
       case 'team_battle':   renderTeamBattle(match); break;
       case 'singapore':     renderSingapore(match);  break;
-      case 'tournament':    renderTournament(match); break;
-      case 'round_robin':   renderRoundRobin(match); break;
       case 'custom':        renderCustom(match);     break;
       default:              renderDuel(match);
     }
@@ -349,14 +348,14 @@
     var html =
       '<div class="duel-match-header">' +
         '<div class="duel-match-label">' + getLang('PLAY_NOW_PLAYING') + '</div>' +
-        '<div class="duel-match-title">MATCH ' + matchNo + '</div>' +
+        '<div class="duel-match-title">' + getLang('PLAY_MATCH_LABEL') + ' ' + matchNo + '</div>' +
         '<div class="duel-match-hint">' + getLang('PLAY_WIN_TAP_HINT') + '</div>' +
       '</div>';
 
     // ── PLAYER CARDS ──
     html += '<div class="duel-arena">' +
       renderDuelPlayerCard(p1, wins[p1 && p1.player_id] || 0) +
-      '<div class="duel-vs-badge">VS</div>' +
+      '<div class="duel-vs-badge">' + getLang('PLAY_VS') + '</div>' +
       renderDuelPlayerCard(p2, wins[p2 && p2.player_id] || 0) +
     '</div>';
 
@@ -636,7 +635,7 @@
     var html =
       '<div class="king-match-header">' +
         '<div class="king-match-label">' + getLang('PLAY_NOW_PLAYING') + '</div>' +
-        '<div class="king-match-title">MATCH ' + matchNo + '</div>' +
+        '<div class="king-match-title">' + getLang('PLAY_MATCH_LABEL') + ' ' + matchNo + '</div>' +
         '<div class="king-match-hint">' + getLang('PLAY_WIN_TAP_HINT') + '</div>' +
       '</div>';
 
@@ -673,7 +672,7 @@
         '<div class="king-queue-grid">';
       queueRest.forEach(function (p, i) {
         html += '<div class="king-queue-chip">' +
-          '<span class="king-queue-num">#' + (i + 1) + '</span>' +  // ganti i+2 → i+1
+          '<span class="king-queue-num">#' + (i + 1) + '</span>' +
           '<span>' + esc(p.player_name) + '</span>' +
         '</div>';
       });
@@ -763,12 +762,12 @@
     }
     var cardClass  = 'king-player-card' + (isKing ? ' is-king' : '');
     var badgeClass = isKing ? 'badge-king' : 'badge-challenger';
-    var badgeText  = isKing ? 'KING' : 'CHALLENGER';
+    var badgeText  = isKing ? getLang('PLAY_KING_BADGE') : getLang('PLAY_CHALLENGER_BADGE');
     var avatarContent = isKing
       ? '<i class="fa-solid fa-crown"></i>'
       : '<i class="fa-solid fa-user"></i>';
     var streakHtml = (isKing && streak > 1)
-      ? '<span class="king-player-streak"><i class="fa-solid fa-fire"></i> WIN STREAK &times;' + streak + '</span>'
+      ? '<span class="king-player-streak"><i class="fa-solid fa-fire"></i> ' + getLang('PLAY_WIN_STREAK_LABEL') + ' &times;' + streak + '</span>'
       : '<span style="min-height:1.1rem;display:block;"></span>';
 
     return '<div class="' + cardClass + '">' +
@@ -789,20 +788,20 @@
     var matchNo = match.match_no || allMatches.length;
 
     matchArea.innerHTML =
-      '<div class="section-label">MATCH #' + matchNo + ' · TEAM BATTLE</div>' +
+      '<div class="section-label">' + getLang('PLAY_MATCH_LABEL') + ' #' + matchNo + ' · ' + getModeLabel('team_battle') + '</div>' +
       '<div class="ch-card" style="margin-bottom:.5rem;">' +
-        '<div class="section-label" style="margin-bottom:.35rem;color:var(--color-primary);">TIM A</div>' +
+        '<div class="section-label" style="margin-bottom:.35rem;color:var(--color-primary);">' + getLang('PLAY_TEAM_A') + '</div>' +
         renderTeamPlayers(teamA) +
-        '<div style="text-align:center;font-size:.75rem;color:var(--color-text-muted);padding:.35rem 0;font-weight:500;">VS</div>' +
-        '<div class="section-label" style="margin-bottom:.35rem;color:var(--color-danger);">TIM B</div>' +
+        '<div style="text-align:center;font-size:.75rem;color:var(--color-text-muted);padding:.35rem 0;font-weight:500;">' + getLang('PLAY_VS') + '</div>' +
+        '<div class="section-label" style="margin-bottom:.35rem;color:var(--color-danger);">' + getLang('PLAY_TEAM_B') + '</div>' +
         renderTeamPlayers(teamB) +
       '</div>' +
       '<div style="display:flex;gap:.5rem;margin-bottom:.75rem;">' +
         '<button class="btn-ch-primary play-team-win-btn" style="flex:1;background:var(--color-primary);" data-team="A">' +
-          getLang('PLAY_TEAM_WIN') + ' A' +
-        '</button>' +
-        '<button class="btn-ch-primary play-team-win-btn" style="flex:1;background:var(--color-danger);" data-team="B">' +
-          getLang('PLAY_TEAM_WIN') + ' B' +
+        getLang('PLAY_TEAM_WIN') + ' ' + getLang('PLAY_TEAM_A_SHORT') +
+      '</button>' +
+      '<button class="btn-ch-primary play-team-win-btn" style="flex:1;background:var(--color-danger);" data-team="B">' +
+        getLang('PLAY_TEAM_WIN') + ' ' + getLang('PLAY_TEAM_B_SHORT') +
         '</button>' +
       '</div>' +
       renderMatchHistory();
@@ -830,7 +829,7 @@
         '<span style="font-size:.875rem;">' + esc(p.player_name) + '</span>' +
         '</div>';
     });
-    return html || '<div style="color:var(--color-text-muted);font-size:.8rem;padding:.35rem 0;">Tidak ada pemain di tim ini</div>';
+    return html || '<div style="color:var(--color-text-muted);font-size:.8rem;padding:.35rem 0;">' + getLang('PLAY_NO_PLAYERS_IN_TEAM') + '</div>';
   }
 
   function confirmTeamWin(team, match, teamA, teamB) {
@@ -864,7 +863,7 @@
     var matchNo = match.match_no || allMatches.length;
 
     matchArea.innerHTML =
-      '<div class="section-label">MATCH #' + matchNo + ' · SINGAPORE</div>' +
+      '<div class="section-label">' + getLang('PLAY_MATCH_LABEL') + ' #' + matchNo + ' · SINGAPORE</div>' +
       '<div class="ch-card" style="margin-bottom:.5rem;">' +
         '<p style="font-size:.8rem;color:var(--color-text-secondary);margin-bottom:.75rem;" data-lang="PLAY_SINGAPORE_HINT">' + getLang('PLAY_SINGAPORE_HINT') + '</p>' +
         renderSingaporeRows(matchPlayers) +
@@ -1042,7 +1041,7 @@
 
     // Multi-player: tampilkan seperti Singapore
     matchArea.innerHTML =
-      '<div class="section-label">MATCH #' + matchNo + ' · CUSTOM</div>' +
+      '<div class="section-label">' + getLang('PLAY_MATCH_LABEL') + ' #' + matchNo + ' · ' + getModeLabel('custom') + '</div>' +
       '<div class="ch-card" style="margin-bottom:.5rem;">' +
         renderSingaporeRows(matchPlayers) +
       '</div>' +
