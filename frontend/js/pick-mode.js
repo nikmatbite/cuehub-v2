@@ -207,7 +207,7 @@
     spinner.classList.remove('d-none');
 
     closeTeamConfig();
-    createSessionGame('team_battle', { rotation_mode: rotation });
+    createSessionGame('team_battle', { rotation_mode: rotation, team_size: 2 });
   });
 
   // ============================================================
@@ -236,10 +236,7 @@
         var payload = {
           session_id: active.session_id,
           game_id:    game.game_id,
-          config:     JSON.stringify({
-            rotation_mode: config.rotation_mode || 'fair',
-            team_size: 2
-          })
+          config:     config || {}
         };
         return Api.sessionGame.create(payload);
       })

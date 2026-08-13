@@ -175,14 +175,13 @@ var GameService = {
     var mode = (gameName || '').toLowerCase().replace(/ /g, '_');
 
     if (mode === GAME_MODE.TEAM_BATTLE) {
-      if (!config.rotation_mode) throw new ApiError('CONFIG_MISSING:rotation_mode');
-      if (!Object.values(ROTATION_MODE).includes(config.rotation_mode)) {
-        throw new ApiError('CONFIG_INVALID:rotation_mode');
-      }
-      if (!config.team_size || parseInt(config.team_size, 10) < 2) {
-        throw new ApiError('CONFIG_MISSING:team_size');
-      }
-    }
+		if (!config.rotation_mode) throw new ApiError('CONFIG_MISSING:rotation_mode');
+		if (!Object.values(ROTATION_MODE).includes(config.rotation_mode)) {
+			throw new ApiError('CONFIG_INVALID:rotation_mode');
+		}
+		// team_size default ke 2 kalau tidak dikirim
+		if (!config.team_size) config.team_size = 2;
+	}
 
     if (mode === GAME_MODE.CUSTOM) {
       ['team_size', 'rotation', 'score_system', 'match_type'].forEach(function (f) {
