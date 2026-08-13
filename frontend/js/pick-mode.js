@@ -236,7 +236,10 @@
         var payload = {
           session_id: active.session_id,
           game_id:    game.game_id,
-          config:     JSON.stringify(config || {})
+          config:     JSON.stringify({
+            rotation_mode: config.rotation_mode || 'fair',
+            team_size: 2
+          })
         };
         return Api.sessionGame.create(payload);
       })
