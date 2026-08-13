@@ -495,6 +495,12 @@ var STRINGS = {
     PLAY_SINGAPORE_HINT: {
 		id: 'Ketuk "Input Ranking" setelah ronde selesai untuk mencatat hasil.',
 		en: 'Tap "Input Ranking" after the round ends to record results.' },
+	PLAY_TB_TAP_HINT: {
+    	id: 'Ketuk tim pemenang',
+    	en: 'Tap winning team' },
+	PLAY_TB_REST: {
+    	id: 'Istirahat',
+    	en: 'Resting' },
     PLAY_TEAM_WIN: {
 		id: 'Tim',
 		en: 'Team' },

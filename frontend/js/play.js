@@ -94,6 +94,431 @@
     return { p1: p1, p2: p2, queue: queue };
   }
 
+  function calcTeamBattleCycle(playerList, seed) {
+    if (!playerList || playerList.length < 4) return [];
+ 
+    var ids  = playerList.map(function (p) { return p.player_id; });
+    var n    = ids.length;
+    var isOdd = n % 2 !== 0;
+ 
+    // Seeded PRNG — Linear Congruential Generator
+    function nextRng(s) { return ((s * 1664525) + 1013904223) & 0x7fffffff; }
+ 
+    function seededShuffle(arr, s) {
+      var a = arr.slice();
+      var r = s || 1;
+      for (var i = a.length - 1; i > 0; i--) {
+        r = nextRng(r);
+        var j = r % (i + 1);
+        var t = a[i]; a[i] = a[j]; a[j] = t;
+      }
+      return a;
+    }
+ 
+    function pairKey(a, b) { return a < b ? a + '|' + b : b + '|' + a; }
+    function getCount(map, a, b) { return map[pairKey(a, b)] || 0; }
+    function incCount(map, a, b) { var k = pairKey(a, b); map[k] = (map[k] || 0) + 1; }
+ 
+    // Semua cara membagi 4 pemain menjadi 2 tim @2 (3 kombinasi)
+    // Dengan anchor p[0] selalu di Tim A untuk menghindari duplikat A↔B
+    function threeCombos(four) {
+      return [
+        { tA: [four[0], four[1]], tB: [four[2], four[3]] },
+        { tA: [four[0], four[2]], tB: [four[1], four[3]] },
+        { tA: [four[0], four[3]], tB: [four[1], four[2]] }
+      ];
+    }
+ 
+    // Pilih combo terbaik (skor partner + skor lawan paling rendah)
+    function bestCombo(four, partMap, oppMap) {
+      var combos = threeCombos(four);
+      var best = combos[0];
+      var bestScore = Infinity;
+      combos.forEach(function (c) {
+        var score =
+          getCount(partMap, c.tA[0], c.tA[1]) * 2 +
+          getCount(partMap, c.tB[0], c.tB[1]) * 2 +
+          getCount(oppMap,  c.tA[0], c.tB[0]) +
+          getCount(oppMap,  c.tA[0], c.tB[1]) +
+          getCount(oppMap,  c.tA[1], c.tB[0]) +
+          getCount(oppMap,  c.tA[1], c.tB[1]);
+        if (score < bestScore) { bestScore = score; best = c; }
+      });
+      return best;
+    }
+ 
+    var shuffled = seededShuffle(ids, seed || 1);
+    var partMap  = {};
+    var oppMap   = {};
+    var slots    = [];
+ 
+    if (!isOdd) {
+      // ── GENAP ────────────────────────────────────────────
+      // n=4 → 3 slot sempurna
+      // n=6 → 15 slot (semua C(6,4)=15 kombo 4-pemain, tiap kombo 1 slot)
+      // n≥8 → heuristik greedy: tiap ronde ambil n/2 match dari semua pemain
+ 
+      if (n === 4) {
+        threeCombos(shuffled).forEach(function (c) {
+          slots.push({ teamA: c.tA, teamB: c.tB, rest: null });
+          incCount(partMap, c.tA[0], c.tA[1]);
+          incCount(partMap, c.tB[0], c.tB[1]);
+          c.tA.forEach(function (x) { c.tB.forEach(function (y) { incCount(oppMap, x, y); }); });
+        });
+      } else {
+        // Greedy round-robin: tiap ronde semua pemain main (n/2 match)
+        // Ulangi sampai semua kombinasi partner tercakup minimal 1x
+        var totalPairs = (n * (n - 1)) / 2;
+        var safety = 0;
+        while (Object.keys(partMap).length < totalPairs && safety < 50) {
+          safety++;
+          var inRound = {};
+          var rng = nextRng(seed + safety);
+          var order = seededShuffle(shuffled, rng);
+          for (var i = 0; i < order.length - 1; i += 2) {
+            if (inRound[order[i]] || inRound[order[i + 1]]) continue;
+            var four = [order[i], order[i + 1]];
+            // Cari 2 pemain lain yang belum di ronde ini
+            var rest = order.filter(function (id) { return four.indexOf(id) === -1 && !inRound[id]; });
+            if (rest.length < 2) break;
+            four = four.concat(rest.slice(0, 2));
+            var c = bestCombo(four, partMap, oppMap);
+            slots.push({ teamA: c.tA, teamB: c.tB, rest: null });
+            four.forEach(function (id) { inRound[id] = true; });
+            incCount(partMap, c.tA[0], c.tA[1]);
+            incCount(partMap, c.tB[0], c.tB[1]);
+            c.tA.forEach(function (x) { c.tB.forEach(function (y) { incCount(oppMap, x, y); }); });
+          }
+        }
+      }
+    } else {
+      // ── GANJIL ───────────────────────────────────────────
+      // n slot: shuffled[r] istirahat di slot r
+      // 4 pemain aktif dipilih dari sisa n-1, dibagi jadi tim terbaik
+      for (var r = 0; r < n; r++) {
+        var resting = shuffled[r];
+        var active  = shuffled.filter(function (id) { return id !== resting; });
+ 
+        // Jika active > 4: pilih 4 dengan partner-score terendah
+        var playing = active;
+        if (active.length > 4) {
+          var pScores = {};
+          active.forEach(function (id) {
+            pScores[id] = 0;
+            active.forEach(function (oth) {
+              if (oth !== id) pScores[id] += getCount(partMap, id, oth);
+            });
+          });
+          playing = active.slice().sort(function (a, b) {
+            return pScores[a] - pScores[b];
+          }).slice(0, 4);
+        }
+ 
+        var combo = bestCombo(playing, partMap, oppMap);
+        slots.push({ teamA: combo.tA, teamB: combo.tB, rest: resting });
+        incCount(partMap, combo.tA[0], combo.tA[1]);
+        incCount(partMap, combo.tB[0], combo.tB[1]);
+        combo.tA.forEach(function (x) { combo.tB.forEach(function (y) { incCount(oppMap, x, y); }); });
+      }
+    }
+ 
+    return slots;
+  }
+ 
+  // ------------------------------------------------------------
+  // getOrCreateTeamBattleCycle()
+  // Ambil siklus dari ch_active.game_config, atau buat baru.
+  // Buat ulang jika daftar pemain berubah.
+  // ------------------------------------------------------------
+  function getOrCreateTeamBattleCycle() {
+    var cfg = active.game_config || {};
+    var storedIds  = (cfg.cycle_player_ids || []).slice().sort().join('|');
+    var currentIds = players.map(function (p) { return p.player_id; }).slice().sort().join('|');
+ 
+    if (!cfg.cycle || !cfg.cycle.length || storedIds !== currentIds) {
+      var seed = Math.floor(Math.random() * 2147483647);
+      cfg.cycle            = calcTeamBattleCycle(players, seed);
+      cfg.cycle_index      = 0;
+      cfg.cycle_player_ids = players.map(function (p) { return p.player_id; });
+      active.game_config   = cfg;
+      saveActiveState(active);
+    }
+ 
+    return cfg;
+  }
+ 
+  // ------------------------------------------------------------
+  // advanceTeamBattleSlot()
+  // Ambil slot pada cycle_index saat ini, lalu increment index.
+  // Return slot { teamA: [...], teamB: [...], rest: id|null }
+  // ------------------------------------------------------------
+  function advanceTeamBattleSlot() {
+    var cfg   = getOrCreateTeamBattleCycle();
+    var cycle = cfg.cycle;
+    var idx   = cfg.cycle_index || 0;
+    var slot  = cycle[idx % cycle.length];
+    cfg.cycle_index    = idx + 1;
+    active.game_config = cfg;
+    saveActiveState(active);
+    return slot;
+  }
+ 
+  // ------------------------------------------------------------
+  // peekTeamBattleNextSlot()
+  // Lihat slot berikutnya tanpa advance index — untuk preview "Match Berikutnya".
+  // ------------------------------------------------------------
+  function peekTeamBattleNextSlot() {
+    var cfg   = getOrCreateTeamBattleCycle();
+    var cycle = cfg.cycle;
+    var idx   = cfg.cycle_index || 0;       // index yg akan dipakai match BERIKUTNYA
+    return cycle[idx % cycle.length] || null;
+  }
+ 
+ 
+// ════════════════════════════════════════════════════════════
+// [2] renderTeamBattle + helper
+// Replace seluruh fungsi renderTeamBattle, renderTeamPlayers,
+// dan confirmTeamWin yang sudah ada.
+// ════════════════════════════════════════════════════════════
+ 
+  function renderTeamBattle(match) {
+    var mp      = match.match_players || match.players || [];
+    var matchNo = match.match_no || allMatches.length;
+ 
+    // Pisah tim
+    var teamA = mp.filter(function (p) { return p.team === 'A'; });
+    var teamB = mp.filter(function (p) { return p.team === 'B'; });
+ 
+    // Hitung win count per pemain dari seluruh match selesai
+    var wins = {};
+    players.forEach(function (p) { wins[p.player_id] = 0; });
+    allMatches.forEach(function (m) {
+      if (m.status !== 'finished' || !m.winner_team) return;
+      var mMp = m.match_players || m.players || [];
+      mMp.forEach(function (mp2) {
+        if (mp2.team === m.winner_team) {
+          wins[mp2.player_id] = (wins[mp2.player_id] || 0) + 1;
+        }
+      });
+    });
+ 
+    // Preview match berikutnya dari siklus
+    var nextSlot = peekTeamBattleNextSlot();
+ 
+    // Pemain yang tidak sedang main = antrian
+    var activeIds = mp.map(function (p) { return p.player_id; });
+    var queueList = players.filter(function (p) {
+      return activeIds.indexOf(p.player_id) === -1;
+    });
+ 
+    var finished = allMatches.filter(function (m) { return m.status === 'finished'; });
+    var histId   = 'tbhist' + Date.now();
+ 
+    // ── HTML ──────────────────────────────────────────────────
+ 
+    // Header
+    var html =
+      '<div class="tb-match-header">' +
+        '<div class="tb-match-label">' + getLang('PLAY_NOW_PLAYING') + '</div>' +
+        '<div class="tb-match-title">MATCH ' + matchNo + '</div>' +
+        '<div class="tb-match-hint">' + getLang('PLAY_TB_TAP_HINT') + '</div>' +
+      '</div>';
+ 
+    // Arena (dua card tim, klik = pilih pemenang)
+    html +=
+      '<div class="tb-arena">' +
+        buildTBTeamCard('A', teamA, wins, true) +
+        '<div class="tb-vs-badge">VS</div>' +
+        buildTBTeamCard('B', teamB, wins, false) +
+      '</div>';
+ 
+    // Next match preview
+    if (nextSlot) {
+      var nA = (nextSlot.teamA || []).map(function (id) { return findPlayer(id); }).filter(Boolean);
+      var nB = (nextSlot.teamB || []).map(function (id) { return findPlayer(id); }).filter(Boolean);
+ 
+      html +=
+        '<div class="tb-section-label">' + getLang('PLAY_NEXT_MATCH') + '</div>' +
+        '<div class="tb-next-card">' +
+          buildTBNextTeam(nA, 'A') +
+          '<div class="tb-next-vs">VS</div>' +
+          buildTBNextTeam(nB, 'B') +
+        '</div>';
+ 
+      if (nextSlot.rest) {
+        var rp = findPlayer(nextSlot.rest);
+        if (rp) {
+          html += '<div class="tb-rest-hint">' +
+            '<i class="fa-solid fa-mug-hot"></i> ' +
+            getLang('PLAY_TB_REST') + ': <strong>' + esc(rp.player_name) + '</strong>' +
+          '</div>';
+        }
+      }
+    }
+ 
+    // Antrian
+    if (queueList.length) {
+      html += '<div class="tb-section-label">' + getLang('PLAY_QUEUE_LABEL') + '</div>';
+      html += '<div class="tb-queue-grid">';
+      queueList.forEach(function (p, i) {
+        html +=
+          '<div class="tb-queue-chip">' +
+            '<span class="tb-queue-num">#' + (i + 1) + '</span>' +
+            '<span class="tb-queue-name">' + esc(p.player_name) + '</span>' +
+          '</div>';
+      });
+      html += '</div>';
+    }
+ 
+    // Riwayat — collapsible
+    if (finished.length) {
+      html +=
+        '<div class="tb-history-wrap">' +
+          '<div class="tb-history-toggle" id="' + histId + '-toggle">' +
+            '<span>' + getLang('PLAY_HISTORY') + ' (' + finished.length + ')</span>' +
+            '<i class="fa-solid fa-chevron-down" id="' + histId + '-chev"></i>' +
+          '</div>' +
+          '<div class="tb-history-rows" id="' + histId + '-rows" style="display:none;">';
+ 
+      finished.slice().reverse().forEach(function (m) {
+        var mMp = m.match_players || m.players || [];
+        var mA  = mMp.filter(function (p) { return p.team === 'A'; });
+        var mB  = mMp.filter(function (p) { return p.team === 'B'; });
+        var wt  = m.winner_team || null;
+ 
+        function names(arr) {
+          return arr.map(function (p) {
+            var found = findPlayer(p.player_id);
+            return found ? found.player_name : '?';
+          }).join(', ');
+        }
+ 
+        html +=
+          '<div class="tb-history-row">' +
+            '<span class="tb-hist-no">#' + (m.match_no || '') + '</span>' +
+            '<div class="tb-hist-teams">' +
+              '<span class="tb-hist-ta">' +
+                '<i class="fa-solid fa-shield-halved" style="font-size:.6rem;"></i> ' + esc(names(mA)) +
+              '</span>' +
+              '<span class="tb-hist-sep">VS</span>' +
+              '<span class="tb-hist-tb">' +
+                '<i class="fa-solid fa-shield-halved" style="font-size:.6rem;"></i> ' + esc(names(mB)) +
+              '</span>' +
+            '</div>' +
+            '<span class="tb-hist-winner ' + (wt === 'A' ? 'tb-hist-wa' : wt === 'B' ? 'tb-hist-wb' : '') + '">' +
+              (wt
+                ? '<i class="fa-solid fa-trophy" style="font-size:.6rem;"></i> ' + getLang('PLAY_TEAM_' + wt)
+                : '—') +
+            '</span>' +
+          '</div>';
+      });
+ 
+      html += '</div></div>';
+    }
+ 
+    // ── Render ────────────────────────────────────────────────
+    matchArea.innerHTML  = html;
+    actionsBar.innerHTML = buildEndGameBtn();
+ 
+    // Bind klik card tim
+    var cardA = matchArea.querySelector('.tb-team-card[data-team="A"]');
+    var cardB = matchArea.querySelector('.tb-team-card[data-team="B"]');
+    if (cardA) cardA.addEventListener('click', function () { confirmTeamWin('A', match, teamA, teamB); });
+    if (cardB) cardB.addEventListener('click', function () { confirmTeamWin('B', match, teamA, teamB); });
+ 
+    attachEndGameListener();
+ 
+    // Toggle riwayat
+    var tog = document.getElementById(histId + '-toggle');
+    if (tog) {
+      tog.addEventListener('click', function () {
+        var rows = document.getElementById(histId + '-rows');
+        var chev = document.getElementById(histId + '-chev');
+        var open = rows.style.display !== 'none';
+        rows.style.display   = open ? 'none' : 'block';
+        if (chev) chev.style.transform = open ? '' : 'rotate(180deg)';
+      });
+    }
+ 
+    applyLang();
+  }
+ 
+  // Render card tim besar (bisa diklik)
+  function buildTBTeamCard(team, teamPlayers, wins, isA) {
+    var cls = 'tb-team-card ' + (isA ? 'tb-team-card-a' : 'tb-team-card-b');
+ 
+    var rows = '';
+    teamPlayers.forEach(function (mp) {
+      var p    = findPlayer(mp.player_id);
+      var name = p ? p.player_name : '?';
+      var w    = p ? (wins[p.player_id] || 0) : 0;
+      rows +=
+        '<div class="tb-player-row">' +
+          '<div class="tb-avatar ' + (isA ? 'tb-avatar-a' : 'tb-avatar-b') + '">' +
+            esc(name.charAt(0).toUpperCase()) +
+          '</div>' +
+          '<div class="tb-player-info">' +
+            '<span class="tb-player-name">' + esc(name) + '</span>' +
+            (w > 0
+              ? '<span class="tb-player-wins ' + (isA ? 'tb-wins-a' : 'tb-wins-b') + '">WIN ' + w + '</span>'
+              : '') +
+          '</div>' +
+        '</div>';
+    });
+ 
+    return '<div class="' + cls + '" data-team="' + team + '">' +
+      '<div class="tb-team-header">' +
+        '<span class="tb-team-badge ' + (isA ? 'tb-badge-a' : 'tb-badge-b') + '">' + team + '</span>' +
+        '<span class="tb-team-label">TEAM ' + team + '</span>' +
+      '</div>' +
+      rows +
+    '</div>';
+  }
+ 
+  // Render preview tim di "Match Berikutnya"
+  function buildTBNextTeam(playerArr, team) {
+    var isA = team === 'A';
+    var rows = playerArr.map(function (p) {
+      return '<div class="tb-next-player">' +
+        '<div class="tb-next-av ' + (isA ? 'tb-next-av-a' : 'tb-next-av-b') + '">' +
+          esc((p.player_name || '?').charAt(0).toUpperCase()) +
+        '</div>' +
+        '<span class="tb-next-name">' + esc(p.player_name) + '</span>' +
+      '</div>';
+    }).join('');
+ 
+    return '<div class="tb-next-team">' +
+      '<span class="tb-next-label ' + (isA ? 'tb-next-la' : 'tb-next-lb') + '">TEAM ' + team + '</span>' +
+      rows +
+    '</div>';
+  }
+ 
+  // Konfirmasi pemenang tim via SweetAlert
+  function confirmTeamWin(team, match, teamA, teamB) {
+    if (isSubmittingResult) return;
+    var winners = (team === 'A' ? teamA : teamB).map(function (mp) {
+      return findPlayer(mp.player_id);
+    }).filter(Boolean);
+    var names = winners.map(function (p) { return p.player_name; }).join(' & ');
+ 
+    Swal.fire({
+      title:             getLang('PLAY_CONFIRM_WIN_TITLE'),
+      text:              'TEAM ' + team + ' — ' + names + ' ' + getLang('PLAY_WIN_LABEL') + '?',
+      icon:              'question',
+      showCancelButton:  true,
+      confirmButtonText: getLang('YES'),
+      cancelButtonText:  getLang('CANCEL'),
+      confirmButtonColor: getComputedStyle(document.documentElement)
+        .getPropertyValue(team === 'A' ? '--color-primary' : '--color-danger').trim()
+    }).then(function (result) {
+      if (!result.isConfirmed) return;
+      if (isSubmittingResult) return;
+      isSubmittingResult = true;
+      hasAnyInput = true;
+      finishMatch(match.match_id, null, team, null);
+    });
+  }
+
   // ============================================================
   // ELEMEN
   // ============================================================
@@ -238,6 +663,40 @@
       } else {
         playerIds = [kingRotation.king.player_id, kingRotation.challenger.player_id];
       }
+    } else if (gameMode === 'team_battle') {
+      // Team Battle: ambil slot berikutnya dari siklus di ch_active
+      // Tidak pakai playerIds — kirim langsung via payload.teams
+      var tbSlot = advanceTeamBattleSlot();
+      var tbPayload = {
+        session_game_id: sessionGameId,
+        teams: {
+          A: tbSlot.teamA,
+          B: tbSlot.teamB
+        }
+      };
+      // Langsung buat match lalu start, bypass alur playerIds di bawah
+      Api.match.create(tbPayload)
+        .then(function (data) {
+          currentMatch = data;
+          allMatches.push(data);
+          return Api.match.start(data.match_id);
+        })
+        .then(function (startData) {
+          // start() tidak return players — merge dari allMatches
+          var inList = null;
+          for (var i = 0; i < allMatches.length; i++) {
+            if (allMatches[i].match_id === startData.match_id) { inList = allMatches[i]; break; }
+          }
+          var mp = inList ? (inList.players || inList.match_players || []) : [];
+          currentMatch = Object.assign({}, startData, { match_players: mp, players: mp });
+          isSubmittingResult = false;
+          renderMatch(currentMatch);
+        })
+        .catch(function (err) {
+          hidePlayLoading();
+          showMatchError(resolveError(err));
+        });
+      return; // early return — alur playerIds tidak dipakai
     } else {
       playerIds = players.map(function (p) { return p.player_id; });
     }
