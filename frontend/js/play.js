@@ -664,15 +664,17 @@
         playerIds = [kingRotation.king.player_id, kingRotation.challenger.player_id];
       }
     } else if (gameMode === 'team_battle') {
-      // Team Battle: ambil slot berikutnya dari siklus di ch_active
-      // Tidak pakai playerIds — kirim langsung via payload.teams
       var tbSlot = advanceTeamBattleSlot();
       var tbPayload = {
         session_game_id: sessionGameId,
         teams: {
           A: tbSlot.teamA,
           B: tbSlot.teamB
-        }
+        },
+        config: JSON.stringify({
+          rotation_mode: (active.game_config || {}).rotation_mode || 'fair',
+          team_size: 2
+        })
       };
       // Langsung buat match lalu start, bypass alur playerIds di bawah
       Api.match.create(tbPayload)
