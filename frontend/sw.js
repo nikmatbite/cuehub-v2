@@ -1,78 +1,47 @@
-const CACHE_NAME = 'cuehub-v3.1';
-const ASSETS = [
-  '/',
-  '/index.html',
-  '/dashboard.html',
-  '/pick-mode.html',
-  '/pick-players.html',
-  '/play.html',
-  '/css/style.css',
-  '/js/lang.js',
-  '/js/api.js',
-  '/js/app.js',
-  '/js/play.js',
-  '/js/dashboard.js',
-  '/js/index.js',
-  '/js/pick-mode.js',
-  '/js/pick-players.js',
-  '/js/sw-register.js'
-];
+const CACHE_NAME = 'cuehub-v3.2';
 
-// Install: cache semua asset
+// Install — langsung skipWaiting, tidak cache dulu
 self.addEventListener('install', function(e) {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then(function(cache) {
-      return cache.addAll(ASSETS);
-    })
-  );
+  self.skipWaiting();
 });
 
-// Activate: hapus cache lama
+// Activate — hapus semua cache lama, langsung claim
 self.addEventListener('activate', function(e) {
   e.waitUntil(
     caches.keys().then(function(keys) {
-      return Promise.all(
-        keys.filter(function(k) { return k !== CACHE_NAME; })
-            .map(function(k) { return caches.delete(k); })
-      );
+      return Promise.all(keys.map(function(k) { return caches.delete(k); }));
+    }).then(function() {
+      return self.clients.claim();
     })
   );
-  // Langsung ambil kontrol tanpa tunggu reload
-  return self.clients.claim();
 });
 
-// Fetch: cache-first untuk asset lokal, network-first untuk API GAS
+// Fetch — network-first untuk semua asset lokal
+// Cache hanya sebagai fallback offline
 self.addEventListener('fetch', function(e) {
   var url = new URL(e.request.url);
 
-  // Bypass SW untuk request ke Google Apps Script (GAS) — biarkan network langsung
-  if (url.hostname.includes('script.google.com')) {
-    return; // tidak intercept, browser handle sendiri
-  }
+  // Skip: bukan GET, atau request ke luar domain (GAS, CDN, dll)
+  if (e.request.method !== 'GET') return;
+  if (url.origin !== self.location.origin) return;
 
-  // Untuk asset lokal: cache-first
   e.respondWith(
-    caches.match(e.request).then(function(cached) {
-      if (cached) return cached;
-
-      // Fetch dengan redirect: 'follow' agar tidak crash saat ada redirect
-      return fetch(e.request, { redirect: 'follow' }).then(function(response) {
-        // Hanya cache response yang valid (status 200, bukan opaque)
-        if (response && response.status === 200 && response.type === 'basic') {
-          var toCache = response.clone();
-          caches.open(CACHE_NAME).then(function(cache) {
-            cache.put(e.request, toCache);
-          });
-        }
-        return response;
-      });
+    fetch(e.request).then(function(response) {
+      // Simpan ke cache sebagai fallback offline
+      if (response && response.status === 200) {
+        var clone = response.clone();
+        caches.open(CACHE_NAME).then(function(cache) {
+          cache.put(e.request, clone);
+        });
+      }
+      return response;
+    }).catch(function() {
+      // Offline — ambil dari cache
+      return caches.match(e.request);
     })
   );
 });
 
-// Pesan dari halaman
 self.addEventListener('message', function(e) {
-  if (e.data === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
+  if (e.data === 'SKIP_WAITING') self.skipWaiting();
 });
