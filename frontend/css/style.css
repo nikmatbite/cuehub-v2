@@ -1135,11 +1135,12 @@ html, body {
 .tb-team-card {
   flex: 1;
   border-radius: var(--radius-lg);
-  padding: .875rem .75rem;
+  padding: 0;
   cursor: pointer;
   border: 2px solid transparent;
   transition: transform .1s, opacity .15s;
   -webkit-tap-highlight-color: transparent;
+  overflow: hidden;
 }
 .tb-team-card:active {
   transform: scale(.97);
@@ -1147,41 +1148,54 @@ html, body {
 }
 
 .tb-team-card-a {
-  background: var(--color-primary-soft);
+  background: var(--color-surface-2);
   border-color: var(--color-primary);
 }
 .tb-team-card-b {
-  background: var(--color-danger-soft);
+  background: var(--color-surface-2);
   border-color: var(--color-danger);
 }
 
-/* ── Header dalam card tim ── */
+/* ── Header dalam card tim — solid penuh ── */
 .tb-team-header {
   display: flex;
   align-items: center;
-  gap: .375rem;
-  margin-bottom: .625rem;
+  gap: .5rem;
+  padding: .625rem .75rem;
+  margin-bottom: 0;
+}
+.tb-team-card-a .tb-team-header {
+  background: var(--color-primary);
+}
+.tb-team-card-b .tb-team-header {
+  background: var(--color-danger);
+}
+
+/* area pemain (di bawah header solid) */
+.tb-team-body {
+  padding: .5rem .75rem .75rem;
 }
 
 .tb-team-badge {
   width: 22px;
   height: 22px;
-  border-radius: 5px;
-  font-size: .7rem;
+  border-radius: 4px;
+  font-size: .65rem;
   font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  background: rgba(255,255,255,0.25);
+  color: #fff;
 }
-.tb-badge-a { background: var(--color-primary); color: #fff; }
-.tb-badge-b { background: var(--color-danger);  color: #fff; }
 
 .tb-team-label {
-  font-size: .8rem;
-  font-weight: 700;
-  letter-spacing: .05em;
-  color: var(--color-text);
+  font-size: .85rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  color: #fff;
+  text-transform: uppercase;
 }
 
 /* ── Baris pemain dalam card ── */
@@ -1191,6 +1205,9 @@ html, body {
   gap: .5rem;
   padding: .375rem 0;
   border-top: 1px solid var(--color-border);
+}
+.tb-player-row:first-child {
+  border-top: none;
 }
 
 .tb-avatar {
@@ -1413,6 +1430,8 @@ html, body {
 }
 .tb-hist-wa { color: var(--color-primary-text); }
 .tb-hist-wb { color: var(--color-danger); }
+.tb-hist-icon-a { font-size: .6rem; color: var(--color-primary-text); }
+.tb-hist-icon-b { font-size: .6rem; color: var(--color-danger); }
 
 /* ── End Game button — solid penuh sesuai mockup ── */
 /* Override khusus di play page, hanya berlaku di #play-actions */

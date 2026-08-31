@@ -242,7 +242,7 @@ var STRINGS = {
 		id: 'Mode Rotasi',
 		en: 'Rotation Mode' },
     ROTATION_FAIR: {
-		id: 'Fair Rotation',
+		id: 'Rotasi Adil',
 		en: 'Fair Rotation' },
     ROTATION_FAIR_DESC: {
 		id: 'Semua kombinasi partner merata',

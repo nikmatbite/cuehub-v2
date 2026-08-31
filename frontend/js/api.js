@@ -1,4 +1,4 @@
-var GAS_URL = 'https://script.google.com/macros/s/AKfycbyv1l9Im-0zjssukHxXdRBMIQvJnyNFAIMMgzm8OJI_ZXGbtiQO-rYOF8ixmyGMX_CS/exec';
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbznatQccniA57JnT1LzUCcex5k8zMiuHpaELKiMNH4lPBjhpbbM2jCCOkz17TsWac5n/exec';
 
 function gasRequest(action, payload) {
   var body = JSON.stringify({ action: action, payload: payload || {} });

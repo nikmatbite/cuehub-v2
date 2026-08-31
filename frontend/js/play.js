@@ -398,16 +398,16 @@
             '<span class="tb-hist-no">#' + (m.match_no || '') + '</span>' +
             '<div class="tb-hist-teams">' +
               '<span class="tb-hist-ta">' +
-                '<i class="fa-solid fa-shield-halved" style="font-size:.6rem;"></i> ' + esc(names(mA)) +
+                '<i class="fa-solid fa-shield-halved tb-hist-icon-a"></i> ' + esc(names(mA)) +
               '</span>' +
               '<span class="tb-hist-sep">VS</span>' +
               '<span class="tb-hist-tb">' +
-                '<i class="fa-solid fa-shield-halved" style="font-size:.6rem;"></i> ' + esc(names(mB)) +
+                '<i class="fa-solid fa-shield-halved tb-hist-icon-b"></i> ' + esc(names(mB)) +
               '</span>' +
             '</div>' +
             '<span class="tb-hist-winner ' + (wt === 'A' ? 'tb-hist-wa' : wt === 'B' ? 'tb-hist-wb' : '') + '">' +
               (wt
-                ? '<i class="fa-solid fa-trophy" style="font-size:.6rem;"></i> ' + getLang('PLAY_TEAM_' + wt)
+                ? '<i class="fa-solid fa-trophy"></i> ' + getLang('PLAY_TEAM_' + wt)
                 : '—') +
             '</span>' +
           '</div>';
@@ -455,23 +455,25 @@
       rows +=
         '<div class="tb-player-row">' +
           '<div class="tb-avatar ' + (isA ? 'tb-avatar-a' : 'tb-avatar-b') + '">' +
-            esc(name.charAt(0).toUpperCase()) +
+            '<i class="fa-solid fa-user"></i>' +
           '</div>' +
           '<div class="tb-player-info">' +
             '<span class="tb-player-name">' + esc(name) + '</span>' +
-            (w > 0
-              ? '<span class="tb-player-wins ' + (isA ? 'tb-wins-a' : 'tb-wins-b') + '">WIN ' + w + '</span>'
-              : '') +
+            '<span class="tb-player-wins ' + (isA ? 'tb-wins-a' : 'tb-wins-b') + '">WIN ' + w + '</span>' +
           '</div>' +
         '</div>';
     });
  
     return '<div class="' + cls + '" data-team="' + team + '">' +
       '<div class="tb-team-header">' +
-        '<span class="tb-team-badge ' + (isA ? 'tb-badge-a' : 'tb-badge-b') + '">' + team + '</span>' +
+        '<span class="tb-team-badge">' +
+          '<i class="fa-solid fa-shield-halved"></i>' +
+        '</span>' +
         '<span class="tb-team-label">TEAM ' + team + '</span>' +
       '</div>' +
-      rows +
+      '<div class="tb-team-body">' +
+        rows +
+      '</div>' +
     '</div>';
   }
  
