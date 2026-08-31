@@ -180,8 +180,7 @@ var MatchService = {
       if (cfgForRotation.rotation_mode === ROTATION_MODE.FAIR) {
         MatchService._recordRotationHistory(
           match.session_game_id,
-          match.match_id,
-          match.match_id // akan di-resolve di dalam fungsi
+          match.match_id
         );
       }
 

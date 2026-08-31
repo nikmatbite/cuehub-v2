@@ -570,6 +570,14 @@
   // LABEL MODE
   // ============================================================
   function getModeLabel(mode) {
+  var MODE_LABELS = {
+    'duel':          getModeLabel('duel'),
+    'king_of_table': getModeLabel('king_of_table'),
+    'team_battle':   getModeLabel('team_battle'),
+    'singapore':     getModeLabel('singapore'),
+    'custom':        getModeLabel('custom')
+  };
+
   var modeKeys = {
     'duel':          'MODE_DUEL',
     'king_of_table': 'MODE_KING_OF_TABLE',
@@ -1241,47 +1249,6 @@
     '</div>';
   }
 
-  // ============================================================
-  // MODE: TEAM BATTLE (2v2)
-  // ============================================================
-  function renderTeamBattle(match) {
-    var mp = match.match_players || [];
-    var teamA = mp.filter(function (p) { return p.team === 'A'; });
-    var teamB = mp.filter(function (p) { return p.team === 'B'; });
-    var matchNo = match.match_no || allMatches.length;
-
-    matchArea.innerHTML =
-      '<div class="section-label">' + getLang('PLAY_MATCH_LABEL') + ' #' + matchNo + ' · ' + getModeLabel('team_battle') + '</div>' +
-      '<div class="ch-card" style="margin-bottom:.5rem;">' +
-        '<div class="section-label" style="margin-bottom:.35rem;color:var(--color-primary);">' + getLang('PLAY_TEAM_A') + '</div>' +
-        renderTeamPlayers(teamA) +
-        '<div style="text-align:center;font-size:.75rem;color:var(--color-text-muted);padding:.35rem 0;font-weight:500;">' + getLang('PLAY_VS') + '</div>' +
-        '<div class="section-label" style="margin-bottom:.35rem;color:var(--color-danger);">' + getLang('PLAY_TEAM_B') + '</div>' +
-        renderTeamPlayers(teamB) +
-      '</div>' +
-      '<div style="display:flex;gap:.5rem;margin-bottom:.75rem;">' +
-        '<button class="btn-ch-primary play-team-win-btn" style="flex:1;background:var(--color-primary);" data-team="A">' +
-        getLang('PLAY_TEAM_WIN') + ' ' + getLang('PLAY_TEAM_A_SHORT') +
-      '</button>' +
-      '<button class="btn-ch-primary play-team-win-btn" style="flex:1;background:var(--color-danger);" data-team="B">' +
-        getLang('PLAY_TEAM_WIN') + ' ' + getLang('PLAY_TEAM_B_SHORT') +
-        '</button>' +
-      '</div>' +
-      renderMatchHistory();
-
-    actionsBar.innerHTML = buildEndGameBtn();
-
-    matchArea.querySelectorAll('.play-team-win-btn').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var team = btn.getAttribute('data-team');
-        confirmTeamWin(team, match, teamA, teamB);
-      });
-    });
-
-    attachEndGameListener();
-    applyLang();
-  }
-
   function renderTeamPlayers(teamPlayers) {
     var html = '';
     teamPlayers.forEach(function (mp) {
@@ -1293,28 +1260,6 @@
         '</div>';
     });
     return html || '<div style="color:var(--color-text-muted);font-size:.8rem;padding:.35rem 0;">' + getLang('PLAY_NO_PLAYERS_IN_TEAM') + '</div>';
-  }
-
-  function confirmTeamWin(team, match, teamA, teamB) {
-    var winners = (team === 'A' ? teamA : teamB).map(function (mp) {
-      return findPlayer(mp.player_id);
-    }).filter(Boolean);
-
-    var names = winners.map(function (p) { return p.player_name; }).join(' & ');
-
-    Swal.fire({
-      title:            getLang('PLAY_CONFIRM_WIN_TITLE'),
-      text:             names + ' ' + getLang('PLAY_WIN_LABEL') + '?',
-      icon:             'question',
-      showCancelButton:  true,
-      confirmButtonText: getLang('YES'),
-      cancelButtonText:  getLang('CANCEL'),
-      confirmButtonColor: getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim()
-    }).then(function (result) {
-      if (!result.isConfirmed) return;
-      var winnerIds = (team === 'A' ? teamA : teamB).map(function (mp) { return mp.player_id; });
-      finishMatch(match.match_id, null, team, winnerIds);
-    });
   }
 
   // ============================================================
@@ -1984,7 +1929,7 @@
     var html =
       '<div style="display:flex;justify-content:space-between;font-size:.875rem;color:var(--color-text-secondary);padding:.3rem 0;">' +
         '<span>' + getLang('PLAY_SUMMARY_MODE') + '</span>' +
-        '<span style="color:var(--color-text);font-weight:500;">' + (MODE_LABELS[gameMode] || gameMode) + '</span>' +
+        '<span style="color:var(--color-text);font-weight:500;">' + (getModeLabel(gameMode) || gameMode) + '</span>' +
       '</div>' +
       '<div style="display:flex;justify-content:space-between;font-size:.875rem;color:var(--color-text-secondary);padding:.3rem 0;">' +
         '<span>' + getLang('PLAY_SUMMARY_TOTAL') + '</span>' +

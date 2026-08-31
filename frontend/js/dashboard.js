@@ -306,18 +306,13 @@
   // TAB PLAYERS
   // ============================================================
   function loadPlayers() {
-    if (allPlayers.length) {
-      renderPlayerList(allPlayers, playerSearchQ);
-      return;
-    }
-
     var listEl = document.getElementById('player-list');
     listEl.innerHTML = '<div class="empty-state"><div class="spinner-border" style="width:1.25rem;height:1.25rem;color:var(--color-primary);"></div></div>';
 
     Api.player.getAll()
       .then(function (data) {
         allPlayers = data || [];
-        renderPlayerList(allPlayers, '');
+        renderPlayerList(allPlayers, playerSearchQ);
       })
       .catch(function () {
         listEl.innerHTML = '<div class="empty-state"><i class="fa-solid fa-circle-exclamation"></i><p>' + resolveError(null) + '</p></div>';
