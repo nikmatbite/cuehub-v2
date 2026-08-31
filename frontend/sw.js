@@ -1,47 +1,52 @@
-const CACHE_NAME = 'cuehub-v3.2';
+const CACHE_NAME = 'cuehub-v3.5';
+const ASSETS = [
+  '/',
+  '/index.html',
+  '/dashboard.html',
+  '/pick-mode.html',
+  '/pick-players.html',
+  '/play.html',
+  '/css/style.css',
+  '/js/lang.js',
+  '/js/api.js',
+  '/js/app.js',
+  '/js/play.js',
+  '/js/dashboard.js',
+  '/js/index.js',
+  '/js/pick-mode.js',
+  '/js/pick-players.js'
+];
 
-// Install — langsung skipWaiting, tidak cache dulu
 self.addEventListener('install', function(e) {
-  self.skipWaiting();
+  e.waitUntil(
+    caches.open(CACHE_NAME).then(function(cache) {
+      return cache.addAll(ASSETS);
+    })
+  );
+  self.skipWaiting(); // langsung aktif, tidak tunggu tab lama ditutup
 });
 
-// Activate — hapus semua cache lama, langsung claim
 self.addEventListener('activate', function(e) {
   e.waitUntil(
     caches.keys().then(function(keys) {
-      return Promise.all(keys.map(function(k) { return caches.delete(k); }));
-    }).then(function() {
-      return self.clients.claim();
+      return Promise.all(
+        keys.filter(function(k) { return k !== CACHE_NAME; })
+            .map(function(k) { return caches.delete(k); })
+      );
     })
   );
+  self.clients.claim(); // langsung kontrol semua tab
 });
 
-// Fetch — network-first untuk semua asset lokal
-// Cache hanya sebagai fallback offline
 self.addEventListener('fetch', function(e) {
   var url = new URL(e.request.url);
-
-  // Skip: bukan GET, atau request ke luar domain (GAS, CDN, dll)
-  if (e.request.method !== 'GET') return;
-  if (url.origin !== self.location.origin) return;
-
+  if (url.hostname.includes('script.google.com')) {
+    e.respondWith(fetch(e.request));
+    return;
+  }
   e.respondWith(
-    fetch(e.request).then(function(response) {
-      // Simpan ke cache sebagai fallback offline
-      if (response && response.status === 200) {
-        var clone = response.clone();
-        caches.open(CACHE_NAME).then(function(cache) {
-          cache.put(e.request, clone);
-        });
-      }
-      return response;
-    }).catch(function() {
-      // Offline — ambil dari cache
-      return caches.match(e.request);
+    caches.match(e.request).then(function(cached) {
+      return cached || fetch(e.request);
     })
   );
-});
-
-self.addEventListener('message', function(e) {
-  if (e.data === 'SKIP_WAITING') self.skipWaiting();
 });
