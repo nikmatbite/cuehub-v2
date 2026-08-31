@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cuehub-v5.5';
+const CACHE_NAME = 'cuehub-v5.6';
 const ASSETS = [
   '/',
   '/index.html',
