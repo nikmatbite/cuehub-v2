@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cuehub-v5.6';
+const CACHE_NAME = 'cuehub-v6';
 const ASSETS = [
   '/',
   '/index.html',
@@ -23,7 +23,7 @@ self.addEventListener('install', function(e) {
       return cache.addAll(ASSETS);
     })
   );
-  self.skipWaiting(); // langsung aktif, tidak tunggu tab lama ditutup
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', function(e) {
@@ -35,13 +35,12 @@ self.addEventListener('activate', function(e) {
       );
     })
   );
-  self.clients.claim(); // langsung kontrol semua tab
+  self.clients.claim();
 });
 
 self.addEventListener('fetch', function(e) {
   var url = new URL(e.request.url);
 
-  // Bypass SW untuk API Google dan request non-GET
   if (url.hostname.includes('script.google.com')) {
     e.respondWith(fetch(e.request));
     return;
@@ -51,7 +50,6 @@ self.addEventListener('fetch', function(e) {
   e.respondWith(
     caches.match(e.request).then(function(cached) {
       if (cached) return cached;
-      // Pakai redirect: 'follow' supaya SW bisa ikuti redirect dari server
       return fetch(e.request, { redirect: 'follow' });
     })
   );
