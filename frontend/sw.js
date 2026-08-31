@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cuehub-v5';
+const CACHE_NAME = 'cuehub-v5.5';
 const ASSETS = [
   '/',
   '/index.html',
@@ -40,13 +40,19 @@ self.addEventListener('activate', function(e) {
 
 self.addEventListener('fetch', function(e) {
   var url = new URL(e.request.url);
+
+  // Bypass SW untuk API Google dan request non-GET
   if (url.hostname.includes('script.google.com')) {
     e.respondWith(fetch(e.request));
     return;
   }
+  if (e.request.method !== 'GET') return;
+
   e.respondWith(
     caches.match(e.request).then(function(cached) {
-      return cached || fetch(e.request);
+      if (cached) return cached;
+      // Pakai redirect: 'follow' supaya SW bisa ikuti redirect dari server
+      return fetch(e.request, { redirect: 'follow' });
     })
   );
 });
