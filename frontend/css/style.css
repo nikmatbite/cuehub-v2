@@ -132,6 +132,7 @@ html, body {
 }
 
 .auth-tabs {
+  display: flex;
   background: var(--color-surface-2);
   border-radius: var(--radius);
   padding: 3px;
@@ -140,6 +141,11 @@ html, body {
 }
 
 .auth-tabs .nav-link {
+  flex: 1;
+  text-align: center;
+  border: none;
+  background: transparent;
+  cursor: pointer;
   color: var(--color-text-secondary);
   border-radius: calc(var(--radius) - 2px);
   font-size: .85rem;
@@ -149,11 +155,17 @@ html, body {
 }
 
 .auth-tabs .nav-link.active {
+  background: var(--color-primary);
   color: #fff;
   box-shadow: var(--shadow-sm);
 }
 
+.auth-form > div {
+  margin-bottom: .85rem;
+}
+
 .auth-form .form-label {
+  display: block;
   font-size: .8rem;
   font-weight: 500;
   color: var(--color-text-secondary);
@@ -162,6 +174,7 @@ html, body {
 
 .auth-form .form-control,
 .auth-form .form-select {
+  width: 100%;
   border-radius: var(--radius-sm);
   border-color: var(--color-border);
   font-size: .875rem;

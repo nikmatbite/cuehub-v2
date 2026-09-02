@@ -8,32 +8,37 @@
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-  <meta name="theme-color" content="#0f172a">
+  <meta name="theme-color" content="#f8fafc">
 </head>
 <body class="auth-page">
   <div class="auth-wrapper">
     <div class="auth-card">
       <div class="auth-logo">
+        <i class="fa-solid fa-circle-dot"></i>
         <span class="auth-logo-text">CueHub</span>
       </div>
 
       <!-- Tabs -->
       <div class="auth-tabs">
-        <button class="ch-tab active" id="tab-login"   data-lang="AUTH_LOGIN"></button>
-        <button class="ch-tab"        id="tab-register" data-lang="AUTH_REGISTER"></button>
+        <button class="nav-link active" id="tab-login"    data-lang="AUTH_LOGIN"></button>
+        <button class="nav-link"        id="tab-register" data-lang="AUTH_REGISTER"></button>
       </div>
 
       <!-- Login form -->
       <form class="auth-form" id="form-login" novalidate>
         <div>
-          <label data-lang="AUTH_EMAIL"></label>
-          <input class="form-control" id="login-email" type="email" autocomplete="email" required>
+          <label class="form-label" for="login-email" data-lang="AUTH_EMAIL"></label>
+          <input class="form-control" id="login-email" type="email"
+                 autocomplete="email" placeholder="nama@email.com" required>
         </div>
         <div>
-          <label data-lang="AUTH_PASSWORD"></label>
+          <label class="form-label" for="login-password" data-lang="AUTH_PASSWORD"></label>
           <div class="input-password-wrap">
-            <input class="form-control" id="login-password" type="password" autocomplete="current-password" required>
-            <button type="button" class="btn-toggle-pw" data-target="login-password"><i class="fa-solid fa-eye"></i></button>
+            <input class="form-control" id="login-password" type="password"
+                   autocomplete="current-password" required>
+            <button type="button" class="btn-toggle-pw" data-target="login-password">
+              <i class="fa-solid fa-eye"></i>
+            </button>
           </div>
         </div>
         <div id="login-error" class="ch-error d-none"></div>
@@ -46,22 +51,27 @@
       <!-- Register form -->
       <form class="auth-form d-none" id="form-register" novalidate>
         <div>
-          <label data-lang="AUTH_DISPLAY_NAME"></label>
-          <input class="form-control" id="reg-name" type="text" autocomplete="name" required>
+          <label class="form-label" for="reg-name" data-lang="AUTH_DISPLAY_NAME"></label>
+          <input class="form-control" id="reg-name" type="text"
+                 autocomplete="name" required>
         </div>
         <div>
-          <label data-lang="AUTH_EMAIL"></label>
-          <input class="form-control" id="reg-email" type="email" autocomplete="email" required>
+          <label class="form-label" for="reg-email" data-lang="AUTH_EMAIL"></label>
+          <input class="form-control" id="reg-email" type="email"
+                 autocomplete="email" placeholder="nama@email.com" required>
         </div>
         <div>
-          <label data-lang="AUTH_PASSWORD"></label>
+          <label class="form-label" for="reg-password" data-lang="AUTH_PASSWORD"></label>
           <div class="input-password-wrap">
-            <input class="form-control" id="reg-password" type="password" autocomplete="new-password" required>
-            <button type="button" class="btn-toggle-pw" data-target="reg-password"><i class="fa-solid fa-eye"></i></button>
+            <input class="form-control" id="reg-password" type="password"
+                   autocomplete="new-password" required>
+            <button type="button" class="btn-toggle-pw" data-target="reg-password">
+              <i class="fa-solid fa-eye"></i>
+            </button>
           </div>
         </div>
         <div>
-          <label data-lang="AUTH_TIMEZONE"></label>
+          <label class="form-label" for="reg-timezone" data-lang="AUTH_TIMEZONE"></label>
           <select class="form-control" id="reg-timezone">
             <option value="Asia/Jakarta">WIB — Asia/Jakarta</option>
             <option value="Asia/Makassar">WITA — Asia/Makassar</option>
@@ -71,7 +81,7 @@
           </select>
         </div>
         <div>
-          <label data-lang="AUTH_LANGUAGE"></label>
+          <label class="form-label" for="reg-language" data-lang="AUTH_LANGUAGE"></label>
           <select class="form-control" id="reg-language">
             <option value="id">Indonesia</option>
             <option value="en">English</option>

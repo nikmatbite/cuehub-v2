@@ -26,7 +26,14 @@
     tabRegister.classList.toggle('active', !isLogin);
     formLogin.classList.toggle('d-none', !isLogin);
     formReg.classList.toggle('d-none', isLogin);
-    setMsg(loginError, ''); setMsg(regError, ''); setMsg(regSuccess, '');
+    setMsg(loginError, '');
+    setMsg(regError, '');
+    setMsg(regSuccess, '');
+    // Focus first input
+    setTimeout(function() {
+      var first = (isLogin ? formLogin : formReg).querySelector('input');
+      if (first) first.focus();
+    }, 50);
   }
   tabLogin.addEventListener('click', function() { showTab('login'); });
   tabRegister.addEventListener('click', function() { showTab('register'); });
