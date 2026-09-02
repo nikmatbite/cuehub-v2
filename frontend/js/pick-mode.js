@@ -1,309 +1,130 @@
 (function () {
-
-  // ============================================================
-  // AUTH GUARD
-  // ============================================================
   var user = requireAuth();
   if (!user) return;
 
-  // ============================================================
-  // STATE
-  // ============================================================
   var active = getActiveState();
   if (!active || !active.session_id || !active.players || active.players.length < 2) {
-    goTo('pick-players.html');
-    return;
+    goTo('pick-players.html'); return;
   }
 
-  var players       = active.players;
-  var playerCount   = players.length;
-  var pendingMode   = null; // mode yang sedang dicoba di-start (sebelum confirm)
+  var players     = active.players;
+  var playerCount = players.length;
+  var pendingMode = null;
 
-  // ============================================================
-  // DEFINISI SEMUA MODE
-  // ============================================================
+  // ── Mode definitions (tanpa Custom) ──
   var MODES = [
-    {
-      id:       'duel',
-      icon:     'fa-solid fa-person-falling',
-      nameKey:  'MODE_SELECT',         // fallback, nama hardcode di bawah
-      name:     'Duel',
-      descKey:  'MODE_DUEL_DESC',
-      minPlayers: 2
-    },
-    {
-      id:       'king_of_table',
-      icon:     'fa-solid fa-crown',
-      name:     'King of Table',
-      descKey:  'MODE_KING_DESC',
-      minPlayers: 2
-    },
-    {
-      id:       'team_battle',
-      icon:     'fa-solid fa-users',
-      name:     'Team Battle',
-      descKey:  'MODE_TEAM_DESC',
-      minPlayers: 4,
-      hasConfig: true
-    },
-    {
-      id:       'singapore',
-      icon:     'fa-solid fa-medal',
-      name:     'Singapore',
-      descKey:  'MODE_SG_DESC',
-      minPlayers: 3
-    },
-    {
-      id:       'custom',
-      icon:     'fa-solid fa-sliders',
-      name:     'Custom',
-      descKey:  'MODE_CUSTOM_DESC',
-      minPlayers: 2
-    }
+    { id: 'duel',          icon: 'fa-solid fa-person-falling', name: 'Duel',          descKey: 'MODE_DUEL_DESC',  minPlayers: 2 },
+    { id: 'king_of_table', icon: 'fa-solid fa-crown',          name: 'King of Table', descKey: 'MODE_KING_DESC',  minPlayers: 2 },
+    { id: 'team_battle',   icon: 'fa-solid fa-users',          name: 'Team Battle',   descKey: 'MODE_TEAM_DESC',  minPlayers: 4, needsConfig: true },
+    { id: 'singapore',     icon: 'fa-solid fa-medal',          name: 'Singapore',     descKey: 'MODE_SG_DESC',    minPlayers: 3 }
   ];
 
-  // ============================================================
-  // ELEMEN
-  // ============================================================
-  var btnBack          = document.getElementById('btn-back');
   var modeListEl       = document.getElementById('mode-list');
+  var infoOverlay      = document.getElementById('info-overlay');
+  var teamConfigOverlay= document.getElementById('team-config-overlay');
   var playerChipsEl    = document.getElementById('player-chips');
   var playersReadyLbl  = document.getElementById('players-ready-label');
-  var infoOverlay      = document.getElementById('info-overlay');
-  var teamConfigOverlay = document.getElementById('team-config-overlay');
+  var btnBack          = document.getElementById('btn-back');
 
-  // ============================================================
-  // RENDER PEMAIN SIAP
-  // ============================================================
-  playersReadyLbl.textContent = playerCount + ' ' + getLang('PLAYER_READY').toUpperCase();
+  // ── Player chips ──
+  if (playersReadyLbl) playersReadyLbl.textContent = playerCount + ' ' + getLang('PLAYER_READY').toUpperCase();
+  if (playerChipsEl)   playerChipsEl.innerHTML = players.map(function(p){ return '<span class="player-chip">' + esc(p.player_name) + '</span>'; }).join('');
 
-  var chipsHtml = '';
-  players.forEach(function (p) {
-    chipsHtml += '<span class="player-chip">' + esc(p.player_name) + '</span>';
-  });
-  playerChipsEl.innerHTML = chipsHtml;
-
-  // ============================================================
-  // RENDER MODE LIST
-  // ============================================================
-  var modeHtml = '';
-  MODES.forEach(function (m) {
-    var enough  = playerCount >= m.minPlayers;
-    var rowStyle = enough ? '' : 'opacity:.45;';
-    modeHtml += '<div class="mode-row" style="' + rowStyle + '">' +
-      '<div class="mode-icon"><i class="ti ' + m.icon + '"></i></div>' +
+  // ── Render modes ──
+  modeListEl.innerHTML = MODES.map(function(m) {
+    var ok = playerCount >= m.minPlayers;
+    return '<div class="mode-row' + (ok ? '' : ' mode-row--disabled') + '">' +
+      '<div class="mode-icon"><i class="' + m.icon + '"></i></div>' +
       '<div class="mode-info">' +
         '<div class="mode-name">' + esc(m.name) + '</div>' +
         '<div class="mode-desc">' + getLang(m.descKey) + '</div>' +
       '</div>' +
-      '<button class="topbar-btn" style="margin-right:.25rem;" data-info-mode="' + m.id + '" aria-label="Info">' +
-        '<i class="fa-solid fa-circle-info"></i>' +
-      '</button>' +
-      '<button class="mode-start" data-start-mode="' + m.id + '"' +
-        (enough ? '' : ' disabled') + '>' +
-        getLang('BTN_START') +
-      '</button>' +
+      '<button class="btn-icon btn-mode-info" data-info="' + m.id + '" aria-label="Info"><i class="fa-solid fa-circle-info"></i></button>' +
+      '<button class="btn-mode-start" data-start="' + m.id + '"' + (ok ? '' : ' disabled') + '>' + getLang('BTN_START') + '</button>' +
     '</div>';
-  });
-  modeListEl.innerHTML = modeHtml;
+  }).join('');
 
-  // ============================================================
-  // INFO SHEET
-  // ============================================================
-  modeListEl.addEventListener('click', function (e) {
-    var infoBtn  = e.target.closest('[data-info-mode]');
-    var startBtn = e.target.closest('[data-start-mode]');
-
-    if (infoBtn) {
-      var modeId = infoBtn.getAttribute('data-info-mode');
-      openInfoSheet(modeId);
-    }
-
-    if (startBtn && !startBtn.disabled) {
-      var modeId = startBtn.getAttribute('data-start-mode');
-      startMode(modeId);
-    }
+  modeListEl.addEventListener('click', function(e) {
+    var infoBtn  = e.target.closest('[data-info]');
+    var startBtn = e.target.closest('[data-start]');
+    if (infoBtn)  openInfo(infoBtn.getAttribute('data-info'));
+    if (startBtn && !startBtn.disabled) startMode(startBtn.getAttribute('data-start'));
   });
 
-  function getModeById(id) {
-    for (var i = 0; i < MODES.length; i++) {
-      if (MODES[i].id === id) return MODES[i];
-    }
-    return null;
-  }
+  // ── Info sheet ──
+  function getModeById(id) { return MODES.find(function(m){ return m.id === id; }); }
 
-  function openInfoSheet(modeId) {
-    var m = getModeById(modeId);
-    if (!m) return;
-
-    document.getElementById('info-icon').innerHTML = '<i class="ti ' + m.icon + '"></i>';
+  function openInfo(modeId) {
+    var m = getModeById(modeId); if (!m) return;
+    document.getElementById('info-icon').innerHTML  = '<i class="' + m.icon + '"></i>';
     document.getElementById('info-title').textContent = m.name;
     document.getElementById('info-desc').textContent  = getLang(m.descKey);
-
-    var startBtn = document.getElementById('btn-start-from-info');
-    var enough   = playerCount >= m.minPlayers;
-    startBtn.disabled = !enough;
+    var startFromInfo = document.getElementById('btn-start-from-info');
+    startFromInfo.disabled = playerCount < m.minPlayers;
     pendingMode = modeId;
-
     infoOverlay.classList.remove('d-none');
   }
 
-  function closeInfoSheet() { infoOverlay.classList.add('d-none'); }
-
-  infoOverlay.addEventListener('click', function (e) {
-    if (e.target === infoOverlay) closeInfoSheet();
+  infoOverlay.addEventListener('click', function(e) { if (e.target === infoOverlay) infoOverlay.classList.add('d-none'); });
+  document.getElementById('btn-start-from-info').addEventListener('click', function() {
+    if (!pendingMode) return;
+    infoOverlay.classList.add('d-none');
+    startMode(pendingMode);
   });
 
-  document.getElementById('btn-start-from-info').addEventListener('click', function () {
-    if (pendingMode) {
-      closeInfoSheet();
-      startMode(pendingMode);
-    }
-  });
-
-  // ============================================================
-  // START MODE
-  // ============================================================
+  // ── Start mode ──
   function startMode(modeId) {
-    var m = getModeById(modeId);
-    if (!m) return;
-
-    // Team Battle — butuh config dulu
-    if (modeId === 'team_battle') {
-      openTeamConfig();
-      pendingMode = 'team_battle';
-      return;
-    }
-
+    var m = getModeById(modeId); if (!m) return;
+    if (modeId === 'team_battle') { pendingMode = 'team_battle'; openTeamConfig(); return; }
     createSessionGame(modeId, {});
   }
 
-  // ============================================================
-  // TEAM BATTLE CONFIG SHEET
-  // ============================================================
+  // ── Team battle config ──
   function openTeamConfig() {
-    // Reset radio ke fair
-    var radios = document.querySelectorAll('input[name="rotation"]');
-    radios.forEach(function (r) { r.checked = r.value === 'fair'; });
+    document.querySelectorAll('input[name="rotation"]').forEach(function(r){ r.checked = r.value === 'fair'; });
     teamConfigOverlay.classList.remove('d-none');
   }
+  document.getElementById('btn-cancel-team-config').addEventListener('click', function(){ teamConfigOverlay.classList.add('d-none'); });
+  teamConfigOverlay.addEventListener('click', function(e){ if (e.target === teamConfigOverlay) teamConfigOverlay.classList.add('d-none'); });
 
-  function closeTeamConfig() { teamConfigOverlay.classList.add('d-none'); }
-
-  document.getElementById('btn-cancel-team-config').addEventListener('click', closeTeamConfig);
-
-  teamConfigOverlay.addEventListener('click', function (e) {
-    if (e.target === teamConfigOverlay) closeTeamConfig();
-  });
-
-  document.getElementById('btn-confirm-team-config').addEventListener('click', function () {
-    var selected = document.querySelector('input[name="rotation"]:checked');
-    var rotation = selected ? selected.value : 'fair';
-
-    var label   = document.querySelector('#btn-confirm-team-config .btn-label');
-    var spinner = document.querySelector('#btn-confirm-team-config .btn-spinner');
-    document.getElementById('btn-confirm-team-config').disabled = true;
-    label.classList.add('d-none');
-    spinner.classList.remove('d-none');
-
-    closeTeamConfig();
+  document.getElementById('btn-confirm-team-config').addEventListener('click', function() {
+    var sel      = document.querySelector('input[name="rotation"]:checked');
+    var rotation = sel ? sel.value : 'fair';
+    teamConfigOverlay.classList.add('d-none');
     createSessionGame('team_battle', { rotation_mode: rotation, team_size: 2 });
   });
 
-  // ============================================================
-  // CREATE SESSION GAME → navigate ke play.html
-  // ============================================================
+  // ── Create session game ──
   function createSessionGame(modeId, config) {
     showLoading();
-
-    // Ambil game_id dari GAME_MASTER berdasarkan game_name / mode
-    // Backend sessionGame.create menerima: session_id, game_id, config
-    // Tapi kita perlu game_id dari GAME_MASTER dulu
     Api.game.getAll()
-      .then(function (games) {
-        var matched = null;
-        for (var i = 0; i < games.length; i++) {
-          // game_name di GAME_MASTER sesuai dengan GAME_MODE constant
-          if ((games[i].game_name || '').toLowerCase().replace(/ /g, '_') === modeId) {
-            matched = games[i];
-            break;
-          }
-        }
+      .then(function(games) {
+        var matched = games.find(function(g) {
+          return (g.game_name || '').toLowerCase().replace(/ /g,'_') === modeId;
+        });
         if (!matched) throw new Error('GAME_NOT_FOUND');
-        return matched;
-      })
-      .then(function (game) {
-        var payload = {
+        return Api.sessionGame.create({
           session_id: active.session_id,
-          game_id:    game.game_id,
+          game_id:    matched.game_id,
           config:     config || {}
-        };
-        return Api.sessionGame.create(payload);
+        });
       })
-      .then(function (data) {
+      .then(function(data) {
         hideLoading();
-
-        // Simpan session_game_id ke active state
         active.session_game_id = data.session_game_id;
         active.game_mode       = modeId;
         active.game_config     = config;
         saveActiveState(active);
-
         goTo('play.html');
       })
-      .catch(function (err) {
+      .catch(function(err) {
         hideLoading();
         showToastMsg('error', resolveError(err));
-
-        // Reset tombol team battle jika ada
-        var confirmBtn = document.getElementById('btn-confirm-team-config');
-        if (confirmBtn) {
-          confirmBtn.disabled = false;
-          var label   = confirmBtn.querySelector('.btn-label');
-          var spinner = confirmBtn.querySelector('.btn-spinner');
-          if (label)   label.classList.remove('d-none');
-          if (spinner) spinner.classList.add('d-none');
-        }
       });
   }
 
-  // ============================================================
-  // BACK
-  // ============================================================
-  btnBack.addEventListener('click', function () {
-    goTo('pick-players.html');
-  });
+  // ── Back ──
+  if (btnBack) btnBack.addEventListener('click', function(){ goTo('pick-players.html'); });
 
-  // ============================================================
-  // ESCAPE HELPER
-  // ============================================================
-  function esc(str) {
-    return String(str || '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
-  }
-
-  // ============================================================
-  // SWITCH TAB CASUAL / TOURNAMENT
-  // ============================================================
-  window.switchTab = function(tab) {
-    var modeList       = document.getElementById('mode-list');
-    var modeTournament = document.getElementById('mode-list-tournament');
-    var tabCasual      = document.getElementById('tab-casual');
-    var tabTournament  = document.getElementById('tab-tournament');
-
-    if (tab === 'casual') {
-      modeList.classList.remove('d-none');
-      modeTournament.classList.add('d-none');
-      tabCasual.classList.add('active');
-      tabTournament.classList.remove('active');
-    } else {
-      modeList.classList.add('d-none');
-      modeTournament.classList.remove('d-none');
-      tabCasual.classList.remove('active');
-      tabTournament.classList.add('active');
-    }
-  };
-}());
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+})();

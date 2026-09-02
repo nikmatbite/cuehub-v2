@@ -1,136 +1,83 @@
 <!DOCTYPE html>
-<html lang="id" data-theme="blue">
+<html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CueHub</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-  <link rel="stylesheet" href="css/style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>CueHub — Pick Mode</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+  <meta name="theme-color" content="#0f172a">
 </head>
-<body>
+<body class="app-shell">
 
-<div class="app-shell">
-
-  <!-- TOPBAR -->
+  <!-- Topbar -->
   <div class="topbar">
-    <button class="topbar-btn" id="btn-back" aria-label="Back">
-      <i class="fa-solid fa-arrow-left"></i>
-    </button>
-    <span class="topbar-title" data-lang="MODE_SELECT"></span>
-    <div style="width:36px;"></div>
+    <button class="topbar-btn" id="btn-back"><i class="fa-solid fa-arrow-left"></i></button>
+    <div class="topbar-title" data-lang="MODE_SELECT"></div>
   </div>
 
-  <!-- CONTENT -->
   <div class="app-content">
-
-    <!-- Pemain siap -->
-    <div class="section-label" id="players-ready-label">
-      <!-- contoh: "4 PEMAIN SIAP" — diisi JS -->
-    </div>
-    <div id="player-chips" style="margin-bottom:.75rem;"></div>
-
-    <div class="ch-divider"></div>
-
-    <!-- Tab Casual / Tournament -->
-    <div class="ch-tab-bar" style="display:flex;gap:.375rem;margin-bottom:.75rem;">
-      <button class="ch-tab active" id="tab-casual" onclick="switchTab('casual')" data-lang="TAB_CASUAL"></button>
-      <button class="ch-tab" id="tab-tournament" onclick="switchTab('tournament')" data-lang="TAB_TOURNAMENT"></button>
+    <!-- Player chips -->
+    <div class="ch-card" style="margin-bottom:.75rem;">
+      <div class="section-label" id="players-ready-label"></div>
+      <div id="player-chips" style="display:flex;flex-wrap:wrap;gap:.375rem;margin-top:.5rem;"></div>
     </div>
 
-    <!-- Mode list Casual -->
-    <div id="mode-list" class="tab-panel">
-      <!-- diisi oleh JS -->
-    </div>
-
-    <!-- Mode list Tournament -->
-    <div id="mode-list-tournament" class="tab-panel d-none">
-      <div class="ch-coming-soon">
-        <i class="fa-solid fa-trophy" style="font-size:2rem;opacity:.3;margin-bottom:.5rem;"></i>
-        <div style="font-weight:600;margin-bottom:.25rem;" data-lang="COMING_SOON"></div>
-        <div style="font-size:.8rem;color:var(--color-text-muted);" data-lang="COMING_SOON_DESC"></div>
-      </div>
-    </div>
-
+    <!-- Mode list -->
+    <div id="mode-list"></div>
   </div>
-  <!-- /app-content -->
 
-</div>
-<!-- /app-shell -->
-
-<!-- ===================== BOTTOM SHEET: MODE INFO ===================== -->
-<div class="ch-overlay d-none" id="info-overlay">
-  <div class="ch-sheet">
-    <div class="ch-sheet-handle"></div>
-    <div style="display:flex;align-items:center;gap:.625rem;margin-bottom:.625rem;">
-      <div class="mode-icon" id="info-icon">
-        <i class="fa-solid fa-circle-info"></i>
-      </div>
-      <div class="ch-sheet-title" id="info-title" style="margin:0;"></div>
-    </div>
-    <p style="font-size:.875rem;color:var(--color-text-secondary);margin-bottom:1rem;" id="info-desc"></p>
-    <button class="btn-ch-primary" id="btn-start-from-info">
-      <i class="fa-solid fa-play"></i>
-      <span data-lang="BTN_START"></span>
-    </button>
-  </div>
-</div>
-
-<!-- ===================== BOTTOM SHEET: TEAM BATTLE CONFIG ===================== -->
-<div class="ch-overlay d-none" id="team-config-overlay">
-  <div class="ch-sheet">
-    <div class="ch-sheet-handle"></div>
-    <div class="ch-sheet-title" data-lang="TEAM_CONFIG_TITLE"></div>
-
-    <div class="section-label" data-lang="ROTATION_MODE_LABEL"></div>
-    <div style="display:flex;flex-direction:column;gap:.5rem;margin-bottom:1rem;" id="rotation-options">
-      <label style="display:flex;align-items:center;gap:.625rem;cursor:pointer;padding:.5rem;border:1px solid var(--color-border);border-radius:var(--radius-sm);">
-        <input type="radio" name="rotation" value="fair" style="accent-color:var(--color-primary);" checked />
-        <div>
-          <div style="font-size:.875rem;font-weight:500;" data-lang="ROTATION_FAIR"></div>
-          <div style="font-size:.75rem;color:var(--color-text-muted);" data-lang="ROTATION_FAIR_DESC"></div>
-        </div>
-      </label>
-      <label style="display:flex;align-items:center;gap:.625rem;cursor:pointer;padding:.5rem;border:1px solid var(--color-border);border-radius:var(--radius-sm);">
-        <input type="radio" name="rotation" value="random" style="accent-color:var(--color-primary);" />
-        <div>
-          <div style="font-size:.875rem;font-weight:500;" data-lang="ROTATION_RANDOM"></div>
-          <div style="font-size:.75rem;color:var(--color-text-muted);" data-lang="ROTATION_RANDOM_DESC"></div>
-        </div>
-      </label>
-      <label style="display:flex;align-items:center;gap:.625rem;cursor:pointer;padding:.5rem;border:1px solid var(--color-border);border-radius:var(--radius-sm);">
-        <input type="radio" name="rotation" value="manual" style="accent-color:var(--color-primary);" />
-        <div>
-          <div style="font-size:.875rem;font-weight:500;" data-lang="ROTATION_MANUAL"></div>
-          <div style="font-size:.75rem;color:var(--color-text-muted);" data-lang="ROTATION_MANUAL_DESC"></div>
-        </div>
-      </label>
-    </div>
-
-    <div style="display:flex;gap:.5rem;">
-      <button class="btn-ch-outline" style="flex:1;" id="btn-cancel-team-config">
-        <span data-lang="CANCEL"></span>
-      </button>
-      <button class="btn-ch-primary" style="flex:1;" id="btn-confirm-team-config">
-        <span class="btn-label" data-lang="BTN_START"></span>
-        <span class="btn-spinner spinner-border spinner-border-sm d-none"></span>
+  <!-- Info sheet -->
+  <div class="ch-overlay d-none" id="info-overlay">
+    <div class="ch-sheet">
+      <div class="ch-sheet-handle"></div>
+      <div style="text-align:center;font-size:2rem;margin:.5rem 0;" id="info-icon"></div>
+      <div class="ch-sheet-title" id="info-title"></div>
+      <div style="font-size:.875rem;color:var(--color-text-muted);margin:.5rem 0 1rem;" id="info-desc"></div>
+      <button class="btn-ch-primary" id="btn-start-from-info" style="width:100%;">
+        <span data-lang="BTN_START"></span>
       </button>
     </div>
   </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="js/lang.js"></script>
-<script src="js/api.js"></script>
-<script src="js/app.js"></script>
-<script src="js/pick-mode.js"></script>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
-      navigator.serviceWorker.register('/sw.js');
-    });
-  }
-</script>
+  <!-- Team Battle config sheet -->
+  <div class="ch-overlay d-none" id="team-config-overlay">
+    <div class="ch-sheet">
+      <div class="ch-sheet-handle"></div>
+      <div class="ch-sheet-title" data-lang="TEAM_CONFIG_TITLE"></div>
+      <div style="display:flex;flex-direction:column;gap:.75rem;margin-top:.75rem;">
+        <label class="ch-card" style="display:flex;align-items:center;gap:.75rem;cursor:pointer;">
+          <input type="radio" name="rotation" value="fair" checked>
+          <div>
+            <div style="font-weight:500;" data-lang="ROTATION_FAIR"></div>
+            <div style="font-size:.75rem;color:var(--color-text-muted);" data-lang="ROTATION_FAIR_DESC"></div>
+          </div>
+        </label>
+        <label class="ch-card" style="display:flex;align-items:center;gap:.75rem;cursor:pointer;">
+          <input type="radio" name="rotation" value="random">
+          <div>
+            <div style="font-weight:500;" data-lang="ROTATION_RANDOM"></div>
+            <div style="font-size:.75rem;color:var(--color-text-muted);" data-lang="ROTATION_RANDOM_DESC"></div>
+          </div>
+        </label>
+      </div>
+      <div style="display:flex;gap:.5rem;margin-top:1rem;">
+        <button class="btn-ch-outline" id="btn-cancel-team-config" style="flex:1;" data-lang="CANCEL"></button>
+        <button class="btn-ch-primary" id="btn-confirm-team-config" style="flex:1;">
+          <span class="btn-label" data-lang="CONFIRM"></span>
+          <span class="btn-spinner d-none"><i class="fa-solid fa-spinner fa-spin"></i></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="js/lang.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/sw-register.js"></script>
+  <script src="js/pick-mode.js"></script>
 </body>
 </html>

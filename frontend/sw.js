@@ -1,56 +1,23 @@
-const CACHE_NAME = 'cuehub-v6';
-const ASSETS = [
-  '/',
-  '/index.html',
-  '/dashboard.html',
-  '/pick-mode.html',
-  '/pick-players.html',
-  '/play.html',
-  '/css/style.css',
-  '/js/lang.js',
-  '/js/api.js',
-  '/js/app.js',
-  '/js/play.js',
-  '/js/dashboard.js',
-  '/js/index.js',
-  '/js/pick-mode.js',
-  '/js/pick-players.js'
-];
+// CueHub v2 — Service Worker (installable only, no offline cache)
+const CACHE_NAME = 'cuehub-v2-shell';
 
 self.addEventListener('install', function(e) {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then(function(cache) {
-      return cache.addAll(ASSETS);
-    })
-  );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', function(e) {
+  // Hapus semua cache lama
   e.waitUntil(
     caches.keys().then(function(keys) {
-      return Promise.all(
-        keys.filter(function(k) { return k !== CACHE_NAME; })
-            .map(function(k) { return caches.delete(k); })
-      );
+      return Promise.all(keys.map(function(k) { return caches.delete(k); }));
+    }).then(function() {
+      return self.clients.claim();
     })
   );
-  self.clients.claim();
 });
 
+// Semua request langsung ke network — tidak ada cache intercept
 self.addEventListener('fetch', function(e) {
-  var url = new URL(e.request.url);
-
-  if (url.hostname.includes('script.google.com')) {
-    e.respondWith(fetch(e.request));
-    return;
-  }
-  if (e.request.method !== 'GET') return;
-
-  e.respondWith(
-    caches.match(e.request).then(function(cached) {
-      if (cached) return cached;
-      return fetch(e.request, { redirect: 'follow' });
-    })
-  );
+  // Biarkan browser handle sendiri (tidak intercept apapun)
+  return;
 });

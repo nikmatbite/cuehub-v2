@@ -1,517 +1,368 @@
 (function () {
-
-  // ============================================================
-  // AUTH GUARD
-  // ============================================================
   var user = requireAuth();
   if (!user) return;
 
-  // ============================================================
-  // STATE
-  // ============================================================
-  var currentTab     = 'home';
-  var currentHTab    = 'session'; // sub-toggle di History
-  var allPlayers     = [];        // cache player list
-  var playerSearchQ  = '';
+  // ── State ──
+  var allSessions = [];
+  var allPlayers  = [];
+  var currentTab  = 'sessions';
+  var playerSearchQ = '';
+  var sessionFilter = 'all';
 
-  // ============================================================
-  // ELEMEN
-  // ============================================================
-  var navTabs          = document.querySelectorAll('.nav-tab');
-  var tabPanels        = document.querySelectorAll('.tab-panel');
-  var btnSettings      = document.getElementById('btn-settings');
-  var settingsOverlay  = document.getElementById('settings-overlay');
-  var btnStartHome     = document.getElementById('btn-start-home');
-  var btnResumeSession = document.getElementById('btn-resume-session');
-  var btnNewSession    = document.getElementById('btn-new-session');
-  var newSessionOverlay  = document.getElementById('new-session-overlay');
-  var btnCancelNewSess   = document.getElementById('btn-cancel-new-session');
-  var btnConfirmNewSess  = document.getElementById('btn-confirm-new-session');
-  var newSessionError    = document.getElementById('new-session-error');
-  var playerSearchInput  = document.getElementById('player-search');
-  var historyToggleBtns  = document.querySelectorAll('#history-toggle .nav-link');
+  // ── DOM refs ──
+  var userNameEl   = document.getElementById('user-name');
+  var userAvatarEl = document.getElementById('user-avatar');
+  var tabBtns      = document.querySelectorAll('.tab-btn');
+  var tabPanels    = document.querySelectorAll('.tab-panel');
+  var sessionList  = document.getElementById('session-list');
+  var playerList   = document.getElementById('player-list');
+  var btnNewSession   = document.getElementById('btn-new-session');
+  var btnAddPlayer    = document.getElementById('btn-add-player');
+  var filterBtns      = document.querySelectorAll('.filter-btn[data-filter]');
+  var playerSearchEl  = document.getElementById('player-search');
+  var btnLogout       = document.getElementById('btn-logout');
+  var btnTheme        = document.getElementById('btn-theme');
 
-  // ============================================================
-  // TAB SWITCHING
-  // ============================================================
-  function switchTab(tab) {
-    currentTab = tab;
+  // ── Init ──
+  if (userNameEl)   userNameEl.textContent  = user.display_name || user.email;
+  if (userAvatarEl) userAvatarEl.innerHTML  = makeAvatar(user.display_name || user.email);
 
-    navTabs.forEach(function (btn) {
-      btn.classList.toggle('active', btn.getAttribute('data-tab') === tab);
+  // ── Tab switching ──
+  tabBtns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var target = btn.getAttribute('data-tab');
+      tabBtns.forEach(function(b) { b.classList.remove('active'); });
+      tabPanels.forEach(function(p) { p.classList.add('d-none'); });
+      btn.classList.add('active');
+      var panel = document.getElementById('tab-' + target);
+      if (panel) panel.classList.remove('d-none');
+      currentTab = target;
+      if (target === 'sessions') loadSessions();
+      if (target === 'players')  loadPlayers();
+      if (target === 'stats')    loadStats();
     });
+  });
 
-    tabPanels.forEach(function (panel) {
-      panel.classList.add('d-none');
+  // ── Filter sessions ──
+  filterBtns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      filterBtns.forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      sessionFilter = btn.getAttribute('data-filter');
+      renderSessions();
     });
-    document.getElementById('tab-' + tab).classList.remove('d-none');
+  });
 
-    // Topbar title: Home pakai logo "CueHub", lainnya pakai label
-    var topbarTitle = document.querySelector('.topbar-title');
-    if (tab === 'home') {
-      topbarTitle.textContent = 'CueHub';
-    } else {
-      var keys = { session: 'NAV_SESSION', players: 'NAV_PLAYERS', history: 'NAV_HISTORY' };
-      topbarTitle.textContent = getLang(keys[tab] || 'CueHub');
-    }
-
-    // Lazy load per tab
-    if (tab === 'home')    loadHome();
-    if (tab === 'session') loadSession();
-    if (tab === 'players') loadPlayers();
-    if (tab === 'history') loadHistory(currentHTab);
+  // ── Player search ──
+  if (playerSearchEl) {
+    playerSearchEl.addEventListener('input', function() {
+      playerSearchQ = this.value.trim().toLowerCase();
+      renderPlayerList();
+    });
   }
 
-  navTabs.forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      switchTab(btn.getAttribute('data-tab'));
+  // ── Logout ──
+  if (btnLogout) {
+    btnLogout.addEventListener('click', function() {
+      showConfirm('LOGOUT_CONFIRM', function() {
+        clearSession();
+        goTo('index.html');
+      });
     });
-  });
-
-  // ============================================================
-  // SETTINGS SHEET
-  // ============================================================
-  function openSettings() { settingsOverlay.classList.remove('d-none'); }
-  function closeSettings() { settingsOverlay.classList.add('d-none'); }
-
-  btnSettings.addEventListener('click', openSettings);
-
-  settingsOverlay.addEventListener('click', function (e) {
-    if (e.target === settingsOverlay) closeSettings();
-  });
-
-  // Language
-  document.getElementById('lang-id').addEventListener('click', function () {
-    localStorage.setItem(LANG_KEY, 'id');
-    applyLang();
-    switchTab(currentTab); // re-render label
-    closeSettings();
-  });
-  document.getElementById('lang-en').addEventListener('click', function () {
-    localStorage.setItem(LANG_KEY, 'en');
-    applyLang();
-    switchTab(currentTab);
-    closeSettings();
-  });
-
-  // Theme
-  document.querySelectorAll('[data-theme-pick]').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      applyTheme(btn.getAttribute('data-theme-pick'));
-      closeSettings();
-    });
-  });
-
-  // Logout
-  document.getElementById('btn-logout').addEventListener('click', function () {
-    closeSettings();
-    showConfirm('CONFIRM_LOGOUT', function () {
-      clearSession();
-      goTo('index.html');
-    });
-  });
-
-  // ============================================================
-  // NEW SESSION SHEET
-  // ============================================================
-  function openNewSession() {
-    // Default tanggal hari ini
-    var today = new Date();
-    var yyyy  = today.getFullYear();
-    var mm    = String(today.getMonth() + 1).padStart(2, '0');
-    var dd    = String(today.getDate()).padStart(2, '0');
-    document.getElementById('new-session-date').value = yyyy + '-' + mm + '-' + dd;
-    document.getElementById('new-session-title').value = '';
-    newSessionError.classList.add('d-none');
-    newSessionOverlay.classList.remove('d-none');
   }
 
-  function closeNewSession() { newSessionOverlay.classList.add('d-none'); }
+  // ── Theme cycle ──
+  if (btnTheme) {
+    btnTheme.addEventListener('click', function() {
+      var themes = ['blue', 'green', 'purple', 'gold'];
+      var cur    = getCurrentTheme();
+      var next   = themes[(themes.indexOf(cur) + 1) % themes.length];
+      applyTheme(next);
+    });
+  }
 
-  btnNewSession.addEventListener('click', openNewSession);
-  btnCancelNewSess.addEventListener('click', closeNewSession);
+  // ── New session ──
+  if (btnNewSession) {
+    btnNewSession.addEventListener('click', function() {
+      openNewSessionModal();
+    });
+  }
 
-  newSessionOverlay.addEventListener('click', function (e) {
-    if (e.target === newSessionOverlay) closeNewSession();
-  });
+  // ── Add player ──
+  if (btnAddPlayer) {
+    btnAddPlayer.addEventListener('click', function() {
+      openAddPlayerModal();
+    });
+  }
 
-  btnConfirmNewSess.addEventListener('click', function () {
-    var title = document.getElementById('new-session-title').value.trim();
-    var date  = document.getElementById('new-session-date').value;
-
-    newSessionError.classList.add('d-none');
-
-    if (!title || !date) {
-      newSessionError.textContent = getLang('MISSING_FIELD');
-      newSessionError.classList.remove('d-none');
-      return;
-    }
-
-    var label   = btnConfirmNewSess.querySelector('.btn-label');
-    var spinner = btnConfirmNewSess.querySelector('.btn-spinner');
-    btnConfirmNewSess.disabled = true;
-    label.classList.add('d-none');
-    spinner.classList.remove('d-none');
-
-    Api.session.create({ title: title, date: date })
-      .then(function (data) {
-        closeNewSession();
-        // Simpan session_id ke active state lalu ke pick-players
-        var active = getActiveState() || {};
-        active.session_id = data.session_id;
-        active.session_title = title;
-        active.players = [];
-        saveActiveState(active);
-        goTo('pick-players.html');
-      })
-      .catch(function (err) {
-        btnConfirmNewSess.disabled = false;
-        label.classList.remove('d-none');
-        spinner.classList.add('d-none');
-        newSessionError.textContent = resolveError(err);
-        newSessionError.classList.remove('d-none');
-      });
-  });
-
-  // ============================================================
-  // TAB HOME
-  // ============================================================
-  function loadHome() {
-    // Nama user
-    document.getElementById('home-display-name').textContent =
-      (user.display_name || user.email || '—') + ' 👋';
-
-    // Stats dari localStorage (cache) — refresh dari API
-    var playerStats = null;
-    Api.statistics.getPlayer(user.user_id)
-      .then(function (data) {
-        playerStats = data;
-        renderHomeStats(data);
-      })
-      .catch(function () {
-        renderHomeStats(null);
-      });
-
-    // Last session
+  // ══════════════════════════════════════════
+  // SESSIONS
+  // ══════════════════════════════════════════
+  function loadSessions() {
+    sessionList.innerHTML = emptySpinner();
     Api.session.getAll()
-      .then(function (sessions) {
-        var finished = (sessions || []).filter(function (s) {
-          return s.status === 'finished';
-        });
-        finished.sort(function (a, b) {
-          return new Date(b.date) - new Date(a.date);
-        });
-        renderLastSession(finished[0] || null);
+      .then(function(data) {
+        allSessions = data || [];
+        renderSessions();
       })
-      .catch(function () {
-        renderLastSession(null);
+      .catch(function(err) {
+        sessionList.innerHTML = emptyError(resolveError(err));
       });
   }
 
-  function renderHomeStats(data) {
-    document.getElementById('stat-total-session').textContent = data ? (data.session || 0) : '—';
-    document.getElementById('stat-win-rate').textContent      = data ? formatWinRate(data.win_rate) : '—';
-    document.getElementById('stat-total-match').textContent   = data ? (data.match || 0) : '—';
-    document.getElementById('stat-streak').textContent        = data ? (data.longest_streak || 0) : '—';
-  }
-
-  function renderLastSession(session) {
-    var el = document.getElementById('home-last-session');
-    if (!session) {
-      el.innerHTML = '<div class="empty-state" style="padding:1.25rem 0;">' +
-        '<i class="fa-solid fa-circle-dot"></i>' +
-        '<p data-lang="DASH_NO_SESSION">' + getLang('DASH_NO_SESSION') + '</p>' +
-        '</div>';
-      return;
-    }
-    el.innerHTML = '<div class="ch-card" style="margin-bottom:.75rem;">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-        '<span style="font-size:.875rem;font-weight:600;">' + esc(session.title) + '</span>' +
-        '<span class="badge-status badge-success">' + getLang('SESSION_FINISHED') + '</span>' +
-      '</div>' +
-      '<div style="font-size:.75rem;color:var(--color-text-secondary);margin-top:3px;">' +
-        formatDate(session.date) +
-      '</div>' +
-    '</div>';
-  }
-
-  btnStartHome.addEventListener('click', function () { startNewPlay(); });
-
-  // ============================================================
-  // TAB SESSION
-  // ============================================================
-  function loadSession() {
-    var active = getActiveState();
-
-    // Banner sesi aktif
-    var banner = document.getElementById('session-active-banner');
-    if (active && active.session_id) {
-      document.getElementById('banner-title').textContent = active.session_title || '—';
-      document.getElementById('banner-meta').textContent  = '';
-      document.getElementById('banner-status').textContent = getLang('SESSION_ONGOING');
-      banner.classList.remove('d-none');
-    } else {
-      banner.classList.add('d-none');
-    }
-
-    // List semua sesi
-    var listEl = document.getElementById('session-list');
-    listEl.innerHTML = '<div class="empty-state"><div class="spinner-border" style="width:1.25rem;height:1.25rem;color:var(--color-primary);"></div></div>';
-
-    Api.session.getAll()
-      .then(function (sessions) {
-        renderSessionList(sessions || []);
-      })
-      .catch(function () {
-        listEl.innerHTML = '<div class="empty-state"><i class="fa-solid fa-circle-exclamation"></i><p>' + resolveError(null) + '</p></div>';
-      });
-  }
-
-  function renderSessionList(sessions) {
-    var listEl = document.getElementById('session-list');
-    if (!sessions.length) {
-      listEl.innerHTML = '<div class="empty-state"><i class="fa-solid fa-circle-dot"></i><p>' + getLang('HISTORY_NO_DATA') + '</p></div>';
-      return;
-    }
-
-    sessions.sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
-
-    var html = '';
-    sessions.forEach(function (s) {
-      var badgeCls  = statusBadgeClass(s.status);
-      var badgeLbl  = getLang('SESSION_' + s.status.toUpperCase()) || s.status;
-      html += '<div class="ch-card">' +
-        '<div style="display:flex;align-items:center;gap:.625rem;">' +
-          '<div style="width:2rem;height:2rem;border-radius:var(--radius-sm);background:var(--color-surface-2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
-            '<i class="fa-solid fa-circle-dot" style="font-size:1rem;color:var(--color-primary);"></i>' +
-          '</div>' +
-          '<div style="flex:1;min-width:0;">' +
-            '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-              '<span style="font-size:.875rem;font-weight:600;">' + esc(s.title) + '</span>' +
-              '<span class="badge-status ' + badgeCls + '">' + badgeLbl + '</span>' +
-            '</div>' +
-            '<div style="font-size:.75rem;color:var(--color-text-secondary);margin-top:3px;">' + formatDate(s.date) + '</div>' +
-          '</div>' +
-        '</div>' +
-      '</div>';
+  function renderSessions() {
+    var filtered = allSessions.filter(function(s) {
+      if (sessionFilter === 'all') return true;
+      return s.status === sessionFilter;
     });
-    listEl.innerHTML = html;
-  }
-
-  btnResumeSession.addEventListener('click', function () {
-    goTo('pick-players.html');
-  });
-
-  // ============================================================
-  // TAB PLAYERS
-  // ============================================================
-  function loadPlayers() {
-    var listEl = document.getElementById('player-list');
-    listEl.innerHTML = '<div class="empty-state"><div class="spinner-border" style="width:1.25rem;height:1.25rem;color:var(--color-primary);"></div></div>';
-
-    Api.player.getAll()
-      .then(function (data) {
-        allPlayers = data || [];
-        renderPlayerList(allPlayers, playerSearchQ);
-      })
-      .catch(function () {
-        listEl.innerHTML = '<div class="empty-state"><i class="fa-solid fa-circle-exclamation"></i><p>' + resolveError(null) + '</p></div>';
-      });
-  }
-
-  playerSearchInput.addEventListener('input', function () {
-    playerSearchQ = this.value.trim();
-    renderPlayerList(allPlayers, playerSearchQ);
-  });
-
-  function renderPlayerList(players, query) {
-    var listEl = document.getElementById('player-list');
-
-    var filtered = players;
-    if (query) {
-      var q = query.toLowerCase();
-      filtered = players.filter(function (p) {
-        return (p.player_name || '').toLowerCase().indexOf(q) !== -1 ||
-               (p.nickname || '').toLowerCase().indexOf(q) !== -1;
-      });
-    }
 
     if (!filtered.length) {
-      listEl.innerHTML = '<div class="empty-state"><i class="fa-solid fa-users"></i><p>' + getLang('PLAYER_NOT_FOUND') + '</p></div>';
+      sessionList.innerHTML = emptyState(getLang('EMPTY_SESSIONS'));
       return;
     }
 
-    var html = '';
-    filtered.forEach(function (p) {
-      var initials = (p.player_name || '?').split(' ').slice(0, 2)
-        .map(function (w) { return w[0]; }).join('').toUpperCase();
-      var statHtml = '';
-      if (p.win_rate !== undefined || p.session !== undefined) {
-        statHtml = '<div class="stat-grid" style="gap:.35rem;margin-top:.5rem;">' +
-          '<div class="stat-box" style="padding:.35rem .5rem;">' +
-            '<div class="stat-val" style="font-size:.85rem;">' + formatWinRate(p.win_rate) + '</div>' +
-            '<div class="stat-lbl">' + getLang('DASH_WIN_RATE') + '</div>' +
-          '</div>' +
-          '<div class="stat-box" style="padding:.35rem .5rem;">' +
-            '<div class="stat-val" style="font-size:.85rem;">' + (p.longest_streak || 0) + '</div>' +
-            '<div class="stat-lbl">' + getLang('DASH_STREAK') + '</div>' +
-          '</div>' +
-        '</div>';
-      }
-
-      var sinceDate = p.created_at ? formatDate(p.created_at) : '';
-      var metaParts = [];
-      if (p.session) metaParts.push(p.session + ' ' + getLang('PLAYER_STATS_SESSION'));
-      if (sinceDate) metaParts.push(getLang('PLAYER_STATS_SINCE') + ' ' + sinceDate);
-
-      html += '<div class="ch-card">' +
-        '<div style="display:flex;align-items:center;gap:.625rem;">' +
-          '<div class="avatar">' + initials + '</div>' +
-          '<div style="flex:1;">' +
-            '<div style="font-size:.875rem;font-weight:600;">' + esc(p.player_name) + '</div>' +
-            (p.nickname ? '<div style="font-size:.75rem;color:var(--color-text-secondary);">' + esc(p.nickname) + '</div>' : '') +
-          '</div>' +
-          (metaParts.length ? '<div style="font-size:.7rem;color:var(--color-text-muted);">' + metaParts.join(' · ') + '</div>' : '') +
+    sessionList.innerHTML = filtered.map(function(s) {
+      var statusCls = {
+        scheduled: 'badge-scheduled',
+        ongoing:   'badge-ongoing',
+        finished:  'badge-finished',
+        cancelled: 'badge-cancelled'
+      }[s.status] || '';
+      return '<div class="ch-card session-card" data-id="' + esc(s.session_id) + '">' +
+        '<div class="session-card-header">' +
+          '<div class="session-name">' + esc(s.session_name) + '</div>' +
+          '<span class="badge ' + statusCls + '">' + getLang('STATUS_' + s.status.toUpperCase()) + '</span>' +
         '</div>' +
-        statHtml +
-      '</div>';
-    });
-    listEl.innerHTML = html;
-  }
-
-  // ============================================================
-  // TAB HISTORY
-  // ============================================================
-  historyToggleBtns.forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      historyToggleBtns.forEach(function (b) { b.classList.remove('active'); });
-      btn.classList.add('active');
-      currentHTab = btn.getAttribute('data-htab');
-      loadHistory(currentHTab);
-    });
-  });
-
-  function loadHistory(mode) {
-    var listEl = document.getElementById('history-list');
-    listEl.innerHTML = '<div class="empty-state"><div class="spinner-border" style="width:1.25rem;height:1.25rem;color:var(--color-primary);"></div></div>';
-
-    if (mode === 'session') {
-      Api.session.getAll('finished')
-        .then(function (data) { renderHistorySession(data || []); })
-        .catch(function () {
-          listEl.innerHTML = '<div class="empty-state"><i class="fa-solid fa-circle-exclamation"></i><p>' + resolveError(null) + '</p></div>';
-        });
-    } else {
-      // By game: ambil semua sesi finished, lalu ambil session games per sesi
-      Api.session.getAll('finished')
-        .then(function (sessions) {
-          if (!sessions || !sessions.length) {
-            renderHistoryGames([]);
-            return Promise.resolve([]);
-          }
-          // Ambil session games dari sesi terbaru saja (5 terakhir) untuk performa
-          sessions.sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
-          var recent = sessions.slice(0, 5);
-          var promises = recent.map(function (s) {
-            return Api.sessionGame.getAll(s.session_id)
-              .then(function (games) {
-                return { session: s, games: games || [] };
-              })
-              .catch(function () { return { session: s, games: [] }; });
-          });
-          return Promise.all(promises);
-        })
-        .then(function (results) {
-          if (!results || !results.length) return;
-          renderHistoryGames(results);
-        })
-        .catch(function () {
-          listEl.innerHTML = '<div class="empty-state"><i class="fa-solid fa-circle-exclamation"></i><p>' + resolveError(null) + '</p></div>';
-        });
-    }
-  }
-
-  function renderHistorySession(sessions) {
-    var listEl = document.getElementById('history-list');
-    if (!sessions.length) {
-      listEl.innerHTML = '<div class="empty-state"><i class="fa-solid fa-clock-rotate-left"></i><p>' + getLang('HISTORY_NO_DATA') + '</p></div>';
-      return;
-    }
-    sessions.sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
-    var html = '';
-    sessions.forEach(function (s) {
-      html += '<div class="ch-card">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-          '<span style="font-size:.875rem;font-weight:600;">' + esc(s.title) + '</span>' +
-          '<span class="badge-status badge-success">' + getLang('SESSION_FINISHED') + '</span>' +
+        '<div class="session-meta">' +
+          '<span><i class="fa-regular fa-calendar"></i> ' + formatDate(s.session_date) + '</span>' +
+          '<span><i class="fa-solid fa-location-dot"></i> ' + esc(s.location || '-') + '</span>' +
         '</div>' +
-        '<div style="font-size:.75rem;color:var(--color-text-secondary);margin-top:3px;">' + formatDate(s.date) + '</div>' +
-        (s.notes ? '<div style="font-size:.75rem;color:var(--color-text-muted);margin-top:3px;">' + esc(s.notes) + '</div>' : '') +
+        '<div class="session-meta">' +
+          '<span><i class="fa-solid fa-users"></i> ' + (s.player_count || 0) + ' ' + getLang('PLAYERS') + '</span>' +
+          '<span><i class="fa-solid fa-gamepad"></i> ' + (s.game_count || 0) + ' ' + getLang('GAMES') + '</span>' +
+        '</div>' +
       '</div>';
-    });
-    listEl.innerHTML = html;
-  }
+    }).join('');
 
-  function renderHistoryGames(results) {
-    var listEl = document.getElementById('history-list');
-    var hasAny = results.some(function (r) { return r.games.length > 0; });
-    if (!hasAny) {
-      listEl.innerHTML = '<div class="empty-state"><i class="fa-solid fa-clock-rotate-left"></i><p>' + getLang('HISTORY_NO_DATA') + '</p></div>';
-      return;
-    }
-    var html = '';
-    results.forEach(function (r) {
-      r.games.forEach(function (g) {
-        html += '<div class="ch-card">' +
-          '<div style="font-size:.875rem;font-weight:600;">' + esc(g.game_name || g.game_id) + '</div>' +
-          '<div style="font-size:.75rem;color:var(--color-text-secondary);margin-top:3px;">' +
-            esc(r.session.title) + ' · ' + formatDate(r.session.date) +
-          '</div>' +
-        '</div>';
+    sessionList.querySelectorAll('.session-card').forEach(function(card) {
+      card.addEventListener('click', function() {
+        var id = card.getAttribute('data-id');
+        saveActiveState({ session_id: id });
+        goTo('pick-mode.html');
       });
     });
-    listEl.innerHTML = html;
   }
 
-  // ============================================================
-  // MULAI MAIN (dari Home atau Session)
-  // ============================================================
-  function startNewPlay() {
-    // Cek ada sesi ongoing?
-    var active = getActiveState();
-    if (active && active.session_id) {
-      goTo('pick-players.html');
+  function openNewSessionModal() {
+    Swal.fire({
+      title: getLang('SESSION_NEW_TITLE'),
+      html:
+        '<input id="swal-sname" class="swal2-input" placeholder="' + getLang('SESSION_NAME_PH') + '">' +
+        '<input id="swal-sloc"  class="swal2-input" placeholder="' + getLang('SESSION_LOC_PH') + '">' +
+        '<input id="swal-sdate" class="swal2-input" type="date">',
+      showCancelButton: true,
+      confirmButtonText: getLang('CREATE'),
+      cancelButtonText:  getLang('CANCEL'),
+      confirmButtonColor: getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim(),
+      preConfirm: function() {
+        var name = document.getElementById('swal-sname').value.trim();
+        var loc  = document.getElementById('swal-sloc').value.trim();
+        var date = document.getElementById('swal-sdate').value;
+        if (!name) { Swal.showValidationMessage(getLang('MISSING_FIELD')); return false; }
+        return { session_name: name, location: loc, session_date: date || new Date().toISOString().slice(0,10) };
+      }
+    }).then(function(result) {
+      if (!result.isConfirmed) return;
+      showLoading();
+      Api.session.create(result.value)
+        .then(function(data) {
+          hideLoading();
+          saveActiveState({ session_id: data.session_id });
+          goTo('pick-mode.html');
+        })
+        .catch(function(err) {
+          hideLoading();
+          showToastMsg('error', resolveError(err));
+        });
+    });
+  }
+
+  // ══════════════════════════════════════════
+  // PLAYERS
+  // ══════════════════════════════════════════
+  function loadPlayers() {
+    playerList.innerHTML = emptySpinner();
+    Api.player.getAll()
+      .then(function(data) {
+        allPlayers = data || [];
+        renderPlayerList();
+      })
+      .catch(function(err) {
+        playerList.innerHTML = emptyError(resolveError(err));
+      });
+  }
+
+  function renderPlayerList() {
+    var list = allPlayers;
+    if (playerSearchQ) {
+      list = allPlayers.filter(function(p) {
+        return (p.player_name || '').toLowerCase().indexOf(playerSearchQ) !== -1;
+      });
+    }
+    if (!list.length) {
+      playerList.innerHTML = emptyState(getLang('EMPTY_PLAYERS'));
       return;
     }
-    // Belum ada sesi — buka sheet new session
-    switchTab('session');
-    openNewSession();
+    playerList.innerHTML = list.map(function(p) {
+      return '<div class="ch-card player-card" data-id="' + esc(p.player_id) + '">' +
+        '<div class="player-row">' +
+          makeAvatar(p.player_name) +
+          '<div class="player-info">' +
+            '<div class="player-name">' + esc(p.player_name) + '</div>' +
+            '<div class="player-meta">' +
+              '<span>' + getLang('WIN_RATE') + ': ' + formatWinRate(p.win_rate) + '</span>' +
+              '<span>' + getLang('MATCHES') + ': ' + (p.total_matches || 0) + '</span>' +
+            '</div>' +
+          '</div>' +
+          '<div class="player-actions">' +
+            '<button class="btn-icon btn-edit-player" data-id="' + esc(p.player_id) + '" title="' + getLang('EDIT') + '">' +
+              '<i class="fa-solid fa-pen"></i>' +
+            '</button>' +
+            '<button class="btn-icon btn-del-player" data-id="' + esc(p.player_id) + '" title="' + getLang('DELETE') + '">' +
+              '<i class="fa-solid fa-trash"></i>' +
+            '</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    playerList.querySelectorAll('.btn-edit-player').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var id = btn.getAttribute('data-id');
+        var p  = allPlayers.find(function(x) { return x.player_id === id; });
+        if (p) openEditPlayerModal(p);
+      });
+    });
+    playerList.querySelectorAll('.btn-del-player').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var id = btn.getAttribute('data-id');
+        var p  = allPlayers.find(function(x) { return x.player_id === id; });
+        if (!p) return;
+        Swal.fire({
+          title: getLang('DELETE_CONFIRM'),
+          text:  esc(p.player_name),
+          icon:  'warning',
+          showCancelButton: true,
+          confirmButtonText: getLang('DELETE'),
+          cancelButtonText:  getLang('CANCEL'),
+          confirmButtonColor: 'var(--color-danger)'
+        }).then(function(r) {
+          if (!r.isConfirmed) return;
+          showLoading();
+          Api.player.delete(id)
+            .then(function() { hideLoading(); loadPlayers(); })
+            .catch(function(err) { hideLoading(); showToastMsg('error', resolveError(err)); });
+        });
+      });
+    });
   }
 
-  // ============================================================
+  function openAddPlayerModal() {
+    Swal.fire({
+      title: getLang('PLAYER_ADD_TITLE'),
+      html:  '<input id="swal-pname" class="swal2-input" placeholder="' + getLang('PLAYER_NAME_PH') + '">',
+      showCancelButton: true,
+      confirmButtonText: getLang('ADD'),
+      cancelButtonText:  getLang('CANCEL'),
+      confirmButtonColor: getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim(),
+      preConfirm: function() {
+        var name = document.getElementById('swal-pname').value.trim();
+        if (!name) { Swal.showValidationMessage(getLang('MISSING_FIELD')); return false; }
+        return { player_name: name };
+      }
+    }).then(function(result) {
+      if (!result.isConfirmed) return;
+      showLoading();
+      Api.player.create(result.value)
+        .then(function() { hideLoading(); loadPlayers(); showToastMsg('success', getLang('PLAYER_ADDED')); })
+        .catch(function(err) { hideLoading(); showToastMsg('error', resolveError(err)); });
+    });
+  }
+
+  function openEditPlayerModal(p) {
+    Swal.fire({
+      title: getLang('PLAYER_EDIT_TITLE'),
+      html:  '<input id="swal-pname" class="swal2-input" value="' + esc(p.player_name) + '">',
+      showCancelButton: true,
+      confirmButtonText: getLang('SAVE'),
+      cancelButtonText:  getLang('CANCEL'),
+      confirmButtonColor: getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim(),
+      preConfirm: function() {
+        var name = document.getElementById('swal-pname').value.trim();
+        if (!name) { Swal.showValidationMessage(getLang('MISSING_FIELD')); return false; }
+        return { player_id: p.player_id, player_name: name };
+      }
+    }).then(function(result) {
+      if (!result.isConfirmed) return;
+      showLoading();
+      Api.player.update(result.value)
+        .then(function() { hideLoading(); loadPlayers(); showToastMsg('success', getLang('SAVED')); })
+        .catch(function(err) { hideLoading(); showToastMsg('error', resolveError(err)); });
+    });
+  }
+
+  // ══════════════════════════════════════════
+  // STATS
+  // ══════════════════════════════════════════
+  var statsEl = document.getElementById('tab-stats');
+  function loadStats() {
+    if (!statsEl) return;
+    statsEl.innerHTML = emptySpinner();
+    Api.statistics.getAllPlayers()
+      .then(function(data) {
+        var rows = (data || []).sort(function(a,b) {
+          return (parseFloat(b.win_rate) || 0) - (parseFloat(a.win_rate) || 0);
+        });
+        if (!rows.length) { statsEl.innerHTML = emptyState(getLang('EMPTY_STATS')); return; }
+        statsEl.innerHTML =
+          '<div class="stats-table-wrap">' +
+          '<table class="stats-table">' +
+          '<thead><tr>' +
+            '<th>#</th>' +
+            '<th>' + getLang('PLAYER') + '</th>' +
+            '<th>' + getLang('MATCHES') + '</th>' +
+            '<th>' + getLang('WINS') + '</th>' +
+            '<th>' + getLang('WIN_RATE') + '</th>' +
+          '</tr></thead><tbody>' +
+          rows.map(function(r, i) {
+            return '<tr>' +
+              '<td>' + (i + 1) + '</td>' +
+              '<td>' + makeAvatar(r.player_name, 'sm') + ' ' + esc(r.player_name) + '</td>' +
+              '<td>' + (r.total_matches || 0) + '</td>' +
+              '<td>' + (r.total_wins || 0) + '</td>' +
+              '<td><span class="winrate-badge">' + formatWinRate(r.win_rate) + '</span></td>' +
+            '</tr>';
+          }).join('') +
+          '</tbody></table></div>';
+      })
+      .catch(function(err) { statsEl.innerHTML = emptyError(resolveError(err)); });
+  }
+
+  // ══════════════════════════════════════════
   // HELPERS
-  // ============================================================
-  function esc(str) {
-    return String(str || '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+  // ══════════════════════════════════════════
+  function emptySpinner() {
+    return '<div class="empty-state"><div class="spinner-border"></div></div>';
+  }
+  function emptyState(msg) {
+    return '<div class="empty-state"><i class="fa-solid fa-inbox"></i><p>' + msg + '</p></div>';
+  }
+  function emptyError(msg) {
+    return '<div class="empty-state"><i class="fa-solid fa-circle-exclamation"></i><p>' + msg + '</p></div>';
   }
 
-  function statusBadgeClass(status) {
-    var map = {
-      ongoing:   'badge-primary',
-      scheduled: 'badge-warning',
-      finished:  'badge-success',
-      cancelled: 'badge-danger'
-    };
-    return map[status] || 'badge-primary';
-  }
-
-  // ============================================================
-  // INIT
-  // ============================================================
-  switchTab('home');
-
-}());
+  // ── Load initial tab ──
+  loadSessions();
+})();
