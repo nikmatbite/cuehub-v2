@@ -32,6 +32,10 @@
 
 /* ---- Base Variables ---- */
 :root {
+  --color-primary: #3b82f6; /* fallback */
+  --color-primary-hover: #2563eb;
+  --color-primary-soft: #eff6ff;
+  --color-primary-text: #1d4ed8;
   --color-bg:             #f8fafc;
   --color-surface:        #ffffff;
   --color-surface-2:      #f1f5f9;
