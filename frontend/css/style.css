@@ -85,6 +85,7 @@ html, body {
 }
 .text-primary { color: var(--color-primary) !important; }
 .bg-primary   { background-color: var(--color-primary) !important; }
+.d-none { display: none !important; }
 
 /* ============================================================
    AUTH PAGE
