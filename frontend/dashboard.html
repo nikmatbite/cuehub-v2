@@ -8,61 +8,256 @@
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-  <meta name="theme-color" content="#0f172a">
+  <meta name="theme-color" content="#3b82f6">
 </head>
-<body class="app-shell">
+<body>
 
-  <!-- Topbar -->
+<div class="app-shell">
+
+  <!-- TOPBAR -->
   <div class="topbar">
     <div id="user-avatar" class="avatar avatar-sm"></div>
-    <div class="topbar-title" id="user-name"></div>
-    <button class="topbar-btn" id="btn-theme" title="Theme"><i class="fa-solid fa-palette"></i></button>
-    <button class="topbar-btn" id="btn-logout" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></button>
+    <span class="topbar-title" id="user-name"></span>
+    <div style="display:flex;gap:.25rem;">
+      <button class="topbar-btn" id="btn-theme" title="Theme">
+        <i class="fa-solid fa-palette"></i>
+      </button>
+      <button class="topbar-btn" id="btn-logout" title="Logout">
+        <i class="fa-solid fa-right-from-bracket"></i>
+      </button>
+    </div>
   </div>
 
-  <!-- Tab bar -->
-  <div class="ch-tab-bar">
-    <button class="ch-tab active tab-btn" data-tab="sessions" data-lang="NAV_SESSION"></button>
-    <button class="ch-tab tab-btn"        data-tab="players"  data-lang="NAV_PLAYERS"></button>
-    <button class="ch-tab tab-btn"        data-tab="stats"    data-lang="NAV_HISTORY"></button>
-  </div>
+  <!-- CONTENT AREA -->
+  <div class="app-content" id="app-content">
 
-  <!-- Content -->
-  <div class="app-content">
+    <!-- ===================== TAB: HOME ===================== -->
+    <div id="tab-home" class="tab-panel">
 
-    <!-- Sessions tab -->
-    <div id="tab-sessions" class="tab-panel">
-      <div style="display:flex;gap:.5rem;margin-bottom:.75rem;">
-        <button class="filter-btn active" data-filter="all" data-lang="FILTER_ALL"></button>
-        <button class="filter-btn" data-filter="ongoing"   data-lang="SESSION_ONGOING"></button>
-        <button class="filter-btn" data-filter="scheduled" data-lang="SESSION_SCHEDULED"></button>
-        <button class="filter-btn" data-filter="finished"  data-lang="SESSION_FINISHED"></button>
+      <!-- Welcome card -->
+      <div class="ch-card home-welcome-card">
+        <div class="home-welcome-text">
+          <div class="stat-lbl" data-lang="DASH_WELCOME"></div>
+          <div class="home-username" id="home-display-name">—</div>
+        </div>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="2.5rem" height="2.5rem" class="home-ball-icon">
+          <circle cx="32" cy="32" r="30" fill="var(--color-primary)"/>
+          <circle cx="32" cy="32" r="14" fill="#fff"/>
+          <text x="32" y="37" text-anchor="middle" font-family="Arial,sans-serif" font-size="16" font-weight="700" fill="#000">8</text>
+        </svg>
       </div>
+
+      <!-- Stat grid -->
+      <div class="stat-grid" id="home-stats">
+        <div class="stat-box">
+          <i class="fa-solid fa-layer-group stat-icon"></i>
+          <div class="stat-val" id="stat-total-session">—</div>
+          <div class="stat-lbl" data-lang="DASH_TOTAL_SESSION"></div>
+        </div>
+        <div class="stat-box">
+          <i class="fa-solid fa-trophy stat-icon"></i>
+          <div class="stat-val" id="stat-win-rate">—</div>
+          <div class="stat-lbl" data-lang="DASH_WIN_RATE"></div>
+        </div>
+        <div class="stat-box">
+          <i class="fa-solid fa-table-tennis-paddle-ball stat-icon"></i>
+          <div class="stat-val" id="stat-total-match">—</div>
+          <div class="stat-lbl" data-lang="DASH_TOTAL_MATCH"></div>
+        </div>
+        <div class="stat-box">
+          <i class="fa-solid fa-fire stat-icon"></i>
+          <div class="stat-val" id="stat-streak">—</div>
+          <div class="stat-lbl" data-lang="DASH_STREAK"></div>
+        </div>
+      </div>
+
+      <!-- Last session -->
+      <div class="section-label" data-lang="DASH_LAST_SESSION"></div>
+      <div id="home-last-session"></div>
+
+      <!-- CTA -->
+      <button class="btn-ch-primary" id="btn-start-home">
+        <i class="fa-solid fa-play"></i>
+        <span data-lang="BTN_START_PLAY"></span>
+      </button>
+
+    </div>
+    <!-- /tab-home -->
+
+    <!-- ===================== TAB: SESSION ===================== -->
+    <div id="tab-session" class="tab-panel d-none">
+
+      <!-- Active session banner -->
+      <div id="session-active-banner" class="d-none">
+        <div class="ch-card active-session-card">
+          <div class="active-session-header">
+            <span class="section-label" style="margin:0;" data-lang="SESSION_ACTIVE"></span>
+            <span class="badge-status badge-primary" id="banner-status"></span>
+          </div>
+          <div class="active-session-title" id="banner-title">—</div>
+          <div class="active-session-meta" id="banner-meta">—</div>
+          <button class="btn-ch-primary mt-2" id="btn-resume-session">
+            <i class="fa-solid fa-play"></i>
+            <span data-lang="BTN_START_PLAY"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- New session button -->
+      <button class="btn-ch-outline mb-3" id="btn-new-session">
+        <i class="fa-solid fa-plus"></i>
+        <span data-lang="BTN_NEW_SESSION"></span>
+      </button>
+
+      <!-- Filter chips -->
+      <div class="filter-chips">
+        <button class="filter-chip active" data-filter="all" data-lang="FILTER_ALL"></button>
+        <button class="filter-chip" data-filter="ongoing" data-lang="SESSION_ONGOING"></button>
+        <button class="filter-chip" data-filter="scheduled" data-lang="SESSION_SCHEDULED"></button>
+        <button class="filter-chip" data-filter="finished" data-lang="SESSION_FINISHED"></button>
+      </div>
+
+      <!-- Session list -->
       <div id="session-list"></div>
-      <button class="btn-ch-primary" id="btn-new-session" style="width:100%;margin-top:.75rem;">
-        <i class="fa-solid fa-plus"></i> <span data-lang="NAV_SESSION"></span>
-      </button>
-    </div>
 
-    <!-- Players tab -->
+    </div>
+    <!-- /tab-session -->
+
+    <!-- ===================== TAB: PLAYERS ===================== -->
     <div id="tab-players" class="tab-panel d-none">
-      <input class="form-control" id="player-search" type="search" data-lang-placeholder="PLAYER_SEARCH" style="margin-bottom:.75rem;">
-      <div id="player-list"></div>
-      <button class="btn-ch-primary" id="btn-add-player" style="width:100%;margin-top:.75rem;">
-        <i class="fa-solid fa-user-plus"></i> <span data-lang="PLAYER_NEW"></span>
-      </button>
-    </div>
 
-    <!-- Stats tab -->
-    <div id="tab-stats" class="tab-panel d-none"></div>
+      <!-- Search -->
+      <div class="search-bar">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input type="text" id="player-search"
+               class="search-input"
+               data-lang-placeholder="PLAYER_SEARCH" />
+      </div>
+
+      <!-- Player list -->
+      <div id="player-list"></div>
+
+      <!-- Add player -->
+      <button class="btn-ch-outline" id="btn-add-player" style="width:100%;margin-top:.75rem;">
+        <i class="fa-solid fa-user-plus"></i>
+        <span data-lang="PLAYER_NEW"></span>
+      </button>
+
+    </div>
+    <!-- /tab-players -->
+
+    <!-- ===================== TAB: HISTORY ===================== -->
+    <div id="tab-history" class="tab-panel d-none">
+
+      <!-- Toggle by session / by game -->
+      <div class="seg-control" id="history-toggle">
+        <button class="seg-btn active" id="htab-session" data-htab="session">
+          <span data-lang="HISTORY_BY_SESSION"></span>
+        </button>
+        <button class="seg-btn" id="htab-game" data-htab="game">
+          <span data-lang="HISTORY_BY_GAME"></span>
+        </button>
+      </div>
+
+      <div id="history-list"></div>
+
+    </div>
+    <!-- /tab-history -->
 
   </div>
+  <!-- /app-content -->
 
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="js/lang.js"></script>
-  <script src="js/app.js"></script>
-  <script src="js/api.js"></script>
-  <script src="js/sw-register.js"></script>
-  <script src="js/dashboard.js"></script>
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-tab active" data-tab="home">
+      <i class="fa-solid fa-house"></i>
+      <span data-lang="NAV_HOME"></span>
+    </button>
+    <button class="nav-tab" data-tab="session">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="1.3rem" height="1.3rem">
+        <circle cx="32" cy="32" r="30" fill="currentColor"/>
+        <circle cx="32" cy="32" r="12" fill="#fff"/>
+        <text x="32" y="37" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="700" fill="#000">8</text>
+      </svg>
+      <span data-lang="NAV_SESSION"></span>
+    </button>
+    <button class="nav-tab" data-tab="players">
+      <i class="fa-solid fa-users"></i>
+      <span data-lang="NAV_PLAYERS"></span>
+    </button>
+    <button class="nav-tab" data-tab="history">
+      <i class="fa-solid fa-clock-rotate-left"></i>
+      <span data-lang="NAV_HISTORY"></span>
+    </button>
+  </nav>
+
+</div>
+<!-- /app-shell -->
+
+<!-- ===================== BOTTOM SHEET: THEME ===================== -->
+<div class="ch-overlay d-none" id="theme-overlay">
+  <div class="ch-sheet">
+    <div class="ch-sheet-handle"></div>
+    <div class="ch-sheet-title" data-lang="SETTINGS_TITLE"></div>
+
+    <!-- Language -->
+    <div class="section-label" data-lang="SETTINGS_LANGUAGE"></div>
+    <div class="sheet-row">
+      <button class="btn-ch-outline flex-1" id="lang-id"><span data-lang="LANG_ID"></span></button>
+      <button class="btn-ch-outline flex-1" id="lang-en"><span data-lang="LANG_EN"></span></button>
+    </div>
+
+    <!-- Theme -->
+    <div class="section-label" data-lang="SETTINGS_THEME"></div>
+    <div class="theme-grid" id="theme-btns">
+      <button class="theme-swatch theme-blue" data-theme-pick="blue"><span data-lang="THEME_BLUE"></span></button>
+      <button class="theme-swatch theme-green" data-theme-pick="green"><span data-lang="THEME_GREEN"></span></button>
+      <button class="theme-swatch theme-purple" data-theme-pick="purple"><span data-lang="THEME_PURPLE"></span></button>
+      <button class="theme-swatch theme-gold" data-theme-pick="gold"><span data-lang="THEME_GOLD"></span></button>
+    </div>
+
+    <div class="ch-divider"></div>
+
+    <button class="btn-ch-danger" id="btn-logout-sheet">
+      <i class="fa-solid fa-right-from-bracket"></i>
+      <span data-lang="SETTINGS_LOGOUT"></span>
+    </button>
+  </div>
+</div>
+
+<!-- ===================== BOTTOM SHEET: NEW SESSION ===================== -->
+<div class="ch-overlay d-none" id="new-session-overlay">
+  <div class="ch-sheet">
+    <div class="ch-sheet-handle"></div>
+    <div class="ch-sheet-title" data-lang="SESSION_NEW_TITLE"></div>
+
+    <div class="form-group">
+      <label class="form-label" data-lang="SESSION_TITLE_LABEL"></label>
+      <input type="text" class="form-control" id="new-session-title" />
+    </div>
+    <div class="form-group">
+      <label class="form-label" data-lang="SESSION_DATE_LABEL"></label>
+      <input type="date" class="form-control" id="new-session-date" />
+    </div>
+    <div id="new-session-error" class="ch-error d-none"></div>
+
+    <div class="sheet-row">
+      <button class="btn-ch-outline flex-1" id="btn-cancel-new-session">
+        <span data-lang="CANCEL"></span>
+      </button>
+      <button class="btn-ch-primary flex-1" id="btn-confirm-new-session">
+        <span class="btn-label" data-lang="CONFIRM"></span>
+        <span class="btn-spinner d-none"><i class="fa-solid fa-circle-notch fa-spin"></i></span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="js/lang.js"></script>
+<script src="js/app.js"></script>
+<script src="js/api.js"></script>
+<script src="js/sw-register.js"></script>
+<script src="js/dashboard.js"></script>
 </body>
 </html>

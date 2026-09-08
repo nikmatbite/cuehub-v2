@@ -5,48 +5,59 @@
   // ── State ──
   var allSessions = [];
   var allPlayers  = [];
-  var currentTab  = 'sessions';
+  var currentTab  = 'home';
   var playerSearchQ = '';
   var sessionFilter = 'all';
 
   // ── DOM refs ──
-  var userNameEl   = document.getElementById('user-name');
-  var userAvatarEl = document.getElementById('user-avatar');
-  var tabBtns      = document.querySelectorAll('.tab-btn');
-  var tabPanels    = document.querySelectorAll('.tab-panel');
-  var sessionList  = document.getElementById('session-list');
-  var playerList   = document.getElementById('player-list');
-  var btnNewSession   = document.getElementById('btn-new-session');
-  var btnAddPlayer    = document.getElementById('btn-add-player');
-  var filterBtns      = document.querySelectorAll('.filter-btn[data-filter]');
-  var playerSearchEl  = document.getElementById('player-search');
-  var btnLogout       = document.getElementById('btn-logout');
-  var btnTheme        = document.getElementById('btn-theme');
+  var userNameEl     = document.getElementById('user-name');
+  var userAvatarEl   = document.getElementById('user-avatar');
+  var homeNameEl     = document.getElementById('home-display-name');
+  var navTabs        = document.querySelectorAll('.nav-tab');
+  var tabPanels      = document.querySelectorAll('.tab-panel');
+  var sessionList    = document.getElementById('session-list');
+  var playerList     = document.getElementById('player-list');
+  var btnNewSession  = document.getElementById('btn-new-session');
+  var btnAddPlayer   = document.getElementById('btn-add-player');
+  var filterChips    = document.querySelectorAll('.filter-chip[data-filter]');
+  var playerSearchEl = document.getElementById('player-search');
+  var btnLogout      = document.getElementById('btn-logout');
+  var btnTheme       = document.getElementById('btn-theme');
+  var btnLogoutSheet = document.getElementById('btn-logout-sheet');
+  var themeOverlay   = document.getElementById('theme-overlay');
+  var btnStartHome   = document.getElementById('btn-start-home');
 
   // ── Init ──
-  if (userNameEl)   userNameEl.textContent  = user.display_name || user.email;
-  if (userAvatarEl) userAvatarEl.innerHTML  = makeAvatar(user.display_name || user.email);
+  var displayName = user.display_name || user.email;
+  if (userNameEl)   userNameEl.textContent = displayName;
+  if (homeNameEl)   homeNameEl.textContent = displayName;
+  if (userAvatarEl) userAvatarEl.innerHTML = makeAvatar(displayName);
 
-  // ── Tab switching ──
-  tabBtns.forEach(function(btn) {
+  // ── Bottom nav switching ──
+  function switchTab(target) {
+    navTabs.forEach(function(b) { b.classList.remove('active'); });
+    tabPanels.forEach(function(p) { p.classList.add('d-none'); });
+    var activeBtn = document.querySelector('.nav-tab[data-tab="' + target + '"]');
+    if (activeBtn) activeBtn.classList.add('active');
+    var panel = document.getElementById('tab-' + target);
+    if (panel) panel.classList.remove('d-none');
+    currentTab = target;
+    if (target === 'home')    loadHomeStats();
+    if (target === 'session') loadSessions();
+    if (target === 'players') loadPlayers();
+    if (target === 'history') loadStats();
+  }
+
+  navTabs.forEach(function(btn) {
     btn.addEventListener('click', function() {
-      var target = btn.getAttribute('data-tab');
-      tabBtns.forEach(function(b) { b.classList.remove('active'); });
-      tabPanels.forEach(function(p) { p.classList.add('d-none'); });
-      btn.classList.add('active');
-      var panel = document.getElementById('tab-' + target);
-      if (panel) panel.classList.remove('d-none');
-      currentTab = target;
-      if (target === 'sessions') loadSessions();
-      if (target === 'players')  loadPlayers();
-      if (target === 'stats')    loadStats();
+      switchTab(btn.getAttribute('data-tab'));
     });
   });
 
-  // ── Filter sessions ──
-  filterBtns.forEach(function(btn) {
+  // ── Filter chips ──
+  filterChips.forEach(function(btn) {
     btn.addEventListener('click', function() {
-      filterBtns.forEach(function(b) { b.classList.remove('active'); });
+      filterChips.forEach(function(b) { b.classList.remove('active'); });
       btn.classList.add('active');
       sessionFilter = btn.getAttribute('data-filter');
       renderSessions();
@@ -62,24 +73,38 @@
   }
 
   // ── Logout ──
-  if (btnLogout) {
-    btnLogout.addEventListener('click', function() {
-      showConfirm('LOGOUT_CONFIRM', function() {
-        clearSession();
-        goTo('index.html');
-      });
+  function doLogout() {
+    showConfirm('LOGOUT_CONFIRM', function() {
+      clearSession();
+      goTo('index.html');
+    });
+  }
+  if (btnLogout)      btnLogout.addEventListener('click', doLogout);
+  if (btnLogoutSheet) btnLogoutSheet.addEventListener('click', doLogout);
+
+  // ── Theme overlay ──
+  if (btnTheme && themeOverlay) {
+    btnTheme.addEventListener('click', function() {
+      themeOverlay.classList.remove('d-none');
+    });
+    themeOverlay.addEventListener('click', function(e) {
+      if (e.target === themeOverlay) themeOverlay.classList.add('d-none');
     });
   }
 
-  // ── Theme cycle ──
-  if (btnTheme) {
-    btnTheme.addEventListener('click', function() {
-      var themes = ['blue', 'green', 'purple', 'gold'];
-      var cur    = getCurrentTheme();
-      var next   = themes[(themes.indexOf(cur) + 1) % themes.length];
-      applyTheme(next);
+  // Theme picker swatches
+  document.querySelectorAll('[data-theme-pick]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      applyTheme(btn.getAttribute('data-theme-pick'));
+      if (themeOverlay) themeOverlay.classList.add('d-none');
     });
-  }
+  });
+
+  // Language buttons
+  var btnLangId = document.getElementById('lang-id');
+  var btnLangEn = document.getElementById('lang-en');
+  if (btnLangId) btnLangId.addEventListener('click', function() { setLang('id'); if (themeOverlay) themeOverlay.classList.add('d-none'); });
+  if (btnLangEn) btnLangEn.addEventListener('click', function() { setLang('en'); if (themeOverlay) themeOverlay.classList.add('d-none'); });
 
   // ── New session ──
   if (btnNewSession) {
@@ -128,16 +153,16 @@
         finished:  'badge-finished',
         cancelled: 'badge-cancelled'
       }[s.status] || '';
-      return '<div class="ch-card session-card" data-id="' + esc(s.session_id) + '">' +
+      return '<div class="session-card" data-id="' + esc(s.session_id) + '">' +
         '<div class="session-card-header">' +
-          '<div class="session-name">' + esc(s.session_name) + '</div>' +
-          '<span class="badge ' + statusCls + '">' + getLang('STATUS_' + s.status.toUpperCase()) + '</span>' +
+          '<div class="session-card-title">' + esc(s.session_name) + '</div>' +
+          '<span class="badge-status ' + statusCls + '">' + getLang('STATUS_' + s.status.toUpperCase()) + '</span>' +
         '</div>' +
-        '<div class="session-meta">' +
+        '<div class="session-card-meta">' +
           '<span><i class="fa-regular fa-calendar"></i> ' + formatDate(s.session_date) + '</span>' +
           '<span><i class="fa-solid fa-location-dot"></i> ' + esc(s.location || '-') + '</span>' +
         '</div>' +
-        '<div class="session-meta">' +
+        '<div class="session-card-meta">' +
           '<span><i class="fa-solid fa-users"></i> ' + (s.player_count || 0) + ' ' + getLang('PLAYERS') + '</span>' +
           '<span><i class="fa-solid fa-gamepad"></i> ' + (s.game_count || 0) + ' ' + getLang('GAMES') + '</span>' +
         '</div>' +
@@ -214,7 +239,7 @@
       return;
     }
     playerList.innerHTML = list.map(function(p) {
-      return '<div class="ch-card player-card" data-id="' + esc(p.player_id) + '">' +
+      return '<div class="player-card" data-id="' + esc(p.player_id) + '">' +
         '<div class="player-row">' +
           makeAvatar(p.player_name) +
           '<div class="player-info">' +
@@ -363,6 +388,76 @@
     return '<div class="empty-state"><i class="fa-solid fa-circle-exclamation"></i><p>' + msg + '</p></div>';
   }
 
+  // ══════════════════════════════════════════
+  // HOME STATS
+  // ══════════════════════════════════════════
+  function loadHomeStats() {
+    // Load last session for home tab
+    var homeLastEl = document.getElementById('home-last-session');
+    if (homeLastEl) homeLastEl.innerHTML = emptySpinner();
+
+    Api.session.getAll()
+      .then(function(data) {
+        allSessions = data || [];
+        var el1 = document.getElementById('stat-total-session');
+        if (el1) el1.textContent = allSessions.length;
+
+        // Last session
+        var sorted = allSessions.slice().sort(function(a, b) {
+          return new Date(b.session_date || 0) - new Date(a.session_date || 0);
+        });
+        if (homeLastEl) {
+          if (!sorted.length) {
+            homeLastEl.innerHTML = emptyState(getLang('EMPTY_SESSIONS'));
+          } else {
+            var s = sorted[0];
+            var statusCls = { scheduled:'badge-scheduled', ongoing:'badge-ongoing', finished:'badge-finished' }[s.status] || '';
+            homeLastEl.innerHTML =
+              '<div class="session-card" data-id="' + esc(s.session_id) + '">' +
+                '<div class="session-card-header">' +
+                  '<div class="session-card-title">' + esc(s.session_name) + '</div>' +
+                  '<span class="badge-status ' + statusCls + '">' + getLang('STATUS_' + s.status.toUpperCase()) + '</span>' +
+                '</div>' +
+                '<div class="session-card-meta">' +
+                  '<span><i class="fa-regular fa-calendar"></i> ' + formatDate(s.session_date) + '</span>' +
+                  '<span><i class="fa-solid fa-users"></i> ' + (s.player_count || 0) + ' ' + getLang('PLAYERS') + '</span>' +
+                  '<span><i class="fa-solid fa-gamepad"></i> ' + (s.game_count || 0) + ' Game</span>' +
+                '</div>' +
+              '</div>';
+            homeLastEl.querySelector('.session-card').addEventListener('click', function() {
+              saveActiveState({ session_id: s.session_id });
+              goTo('pick-mode.html');
+            });
+          }
+        }
+      })
+      .catch(function() {
+        if (homeLastEl) homeLastEl.innerHTML = emptyState('—');
+      });
+
+    // Load stats from statistics API
+    Api.statistics && Api.statistics.getAllPlayers && Api.statistics.getAllPlayers()
+      .then(function(data) {
+        var rows = data || [];
+        var myRow = rows.find(function(r) { return r.player_id === (user && user.player_id); });
+        var totalMatches = rows.reduce(function(sum, r) { return sum + (r.total_matches || 0); }, 0);
+        var el2 = document.getElementById('stat-win-rate');
+        var el3 = document.getElementById('stat-total-match');
+        var el4 = document.getElementById('stat-streak');
+        if (el2 && myRow) el2.textContent = formatWinRate(myRow.win_rate);
+        if (el3) el3.textContent = totalMatches;
+        if (el4 && myRow) el4.textContent = (myRow.current_streak || 0) + '🔥';
+      })
+      .catch(function() {});
+  }
+
+  // ── btn-start-home ──
+  if (btnStartHome) {
+    btnStartHome.addEventListener('click', function() {
+      switchTab('session');
+    });
+  }
+
   // ── Load initial tab ──
-  loadSessions();
+  switchTab('home');
 })();
