@@ -23,18 +23,19 @@ var router = (function() {
 
     // Navigasi ke route
     go: function(name, params) {
+      if (_navigating) return;          // ← tambah guard di awal
       _navigating = true;
-      window.location.hash = '#/' + name;
-      _navigate(name, params);
-      // Reset flag setelah hashchange sempat fire
-      setTimeout(function() { _navigating = false; }, 50);
+      _navigate(name, params);          // ← navigate dulu
+      window.location.hash = '#/' + name;  // ← update hash setelahnya
+      setTimeout(function() { _navigating = false; }, 100); // ← naikin ke 100ms
     },
 
     replace: function(name, params) {
+      if (_navigating) return;
       _navigating = true;
-      window.location.replace('#/' + name);
       _navigate(name, params);
-      setTimeout(function() { _navigating = false; }, 50);
+      window.location.replace('#/' + name);
+      setTimeout(function() { _navigating = false; }, 100);
     },
 
     init: function() {
@@ -66,10 +67,10 @@ var router = (function() {
       if (allowed !== true && allowed !== undefined) {
         _navigating = true;
         window.location.replace('#/' + allowed);
-        _navigating = false;
         _currentRoute = allowed;
         var redirectHandler = _routes[allowed];
         if (redirectHandler) redirectHandler();
+        setTimeout(function() { _navigating = false; }, 100); // ← tambahkan ini
         return;
       }
     }
