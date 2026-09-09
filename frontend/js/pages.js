@@ -87,13 +87,17 @@ var PageLogin = {
 
     ui.loading.show();
     var res = await api.auth.login({ display_name: name, password: pass });
-    ui.loading.hide();
 
     if (res.success) {
       store.set('token', res.data.token);
       store.set('user', { user_id: res.data.user_id, display_name: res.data.display_name });
+
+      await new Promise(function(resolve) { setTimeout(resolve, 1500); });
+
+      ui.loading.hide();
       router.go('dashboard');
     } else {
+      ui.loading.hide();
       ui.toast.apiError(res.error && res.error.code);
     }
   },
