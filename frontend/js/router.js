@@ -25,15 +25,16 @@ var router = (function() {
     go: function(name, params) {
       _navigating = true;
       window.location.hash = '#/' + name;
-      _navigating = false;
       _navigate(name, params);
+      // Reset flag setelah hashchange sempat fire
+      setTimeout(function() { _navigating = false; }, 50);
     },
 
     replace: function(name, params) {
       _navigating = true;
       window.location.replace('#/' + name);
-      _navigating = false;
       _navigate(name, params);
+      setTimeout(function() { _navigating = false; }, 50);
     },
 
     init: function() {
