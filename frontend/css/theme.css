@@ -1,0 +1,193 @@
+/* =============================================================
+   CueHub v3 — theme.css
+   CSS Custom Properties untuk 5 tema
+   Semua warna di file lain HARUS pakai var() dari sini
+   ============================================================= */
+
+/* --- DARK (default) --- */
+[data-theme="dark"],
+:root {
+  --ch-bg-base      : #0d0d1a;
+  --ch-bg-surface   : #16162a;
+  --ch-bg-elevated  : #1e1e35;
+  --ch-bg-overlay   : #252540;
+
+  --ch-accent       : #7c6af7;     /* ungu-biru vivid */
+  --ch-accent-hover : #9b8cf9;
+  --ch-accent-soft  : rgba(124, 106, 247, 0.15);
+
+  --ch-success      : #4ade80;
+  --ch-success-soft : rgba(74, 222, 128, 0.15);
+  --ch-warning      : #fbbf24;
+  --ch-warning-soft : rgba(251, 191, 36, 0.15);
+  --ch-danger       : #f87171;
+  --ch-danger-soft  : rgba(248, 113, 113, 0.15);
+  --ch-info         : #38bdf8;
+
+  --ch-text-primary : #f0f0ff;
+  --ch-text-secondary: #9090b8;
+  --ch-text-muted   : #5c5c80;
+  --ch-text-inverse : #0d0d1a;
+
+  --ch-border       : rgba(255,255,255,0.08);
+  --ch-border-focus : var(--ch-accent);
+
+  --ch-shadow-sm    : 0 2px 8px rgba(0,0,0,0.4);
+  --ch-shadow-md    : 0 4px 20px rgba(0,0,0,0.5);
+  --ch-shadow-lg    : 0 8px 40px rgba(0,0,0,0.6);
+  --ch-shadow-glow  : 0 0 24px rgba(124, 106, 247, 0.3);
+
+  --ch-radius-sm    : 8px;
+  --ch-radius-md    : 14px;
+  --ch-radius-lg    : 20px;
+  --ch-radius-xl    : 28px;
+
+  --ch-font-display : 'Space Grotesk', system-ui, sans-serif;
+  --ch-font-body    : 'Inter', system-ui, sans-serif;
+  --ch-font-mono    : 'JetBrains Mono', monospace;
+
+  /* ELO rank colors */
+  --elo-1 : #6b7280;   /* Beginner */
+  --elo-2 : #22c55e;   /* Novice */
+  --elo-3 : #eab308;   /* Intermediate */
+  --elo-4 : #3b82f6;   /* Advanced */
+  --elo-5 : #8b5cf6;   /* Expert */
+  --elo-6 : #ec4899;   /* Professional */
+  --elo-7 : #f59e0b;   /* World Class */
+
+  /* Avatar palette */
+  --av-1: #7c6af7; --av-2: #f87171; --av-3: #4ade80; --av-4: #fbbf24;
+  --av-5: #38bdf8; --av-6: #f472b6; --av-7: #a78bfa; --av-8: #34d399;
+}
+
+/* --- LIGHT --- */
+[data-theme="light"] {
+  --ch-bg-base      : #f4f4fb;
+  --ch-bg-surface   : #ffffff;
+  --ch-bg-elevated  : #ececf8;
+  --ch-bg-overlay   : #e0e0f4;
+
+  --ch-accent       : #6355d8;
+  --ch-accent-hover : #5548c4;
+  --ch-accent-soft  : rgba(99, 85, 216, 0.12);
+
+  --ch-success      : #16a34a;
+  --ch-success-soft : rgba(22, 163, 74, 0.12);
+  --ch-warning      : #d97706;
+  --ch-warning-soft : rgba(217, 119, 6, 0.12);
+  --ch-danger       : #dc2626;
+  --ch-danger-soft  : rgba(220, 38, 38, 0.12);
+  --ch-info         : #0284c7;
+
+  --ch-text-primary : #1a1a2e;
+  --ch-text-secondary: #4a4a6e;
+  --ch-text-muted   : #9090b0;
+  --ch-text-inverse : #ffffff;
+
+  --ch-border       : rgba(0,0,0,0.1);
+  --ch-border-focus : var(--ch-accent);
+
+  --ch-shadow-sm    : 0 2px 8px rgba(0,0,0,0.08);
+  --ch-shadow-md    : 0 4px 20px rgba(0,0,0,0.1);
+  --ch-shadow-lg    : 0 8px 40px rgba(0,0,0,0.12);
+  --ch-shadow-glow  : 0 0 24px rgba(99, 85, 216, 0.2);
+}
+
+/* --- GREEN (billiard table feel) --- */
+[data-theme="green"] {
+  --ch-bg-base      : #0a1a0f;
+  --ch-bg-surface   : #0f2418;
+  --ch-bg-elevated  : #163020;
+  --ch-bg-overlay   : #1c3d28;
+
+  --ch-accent       : #4ade80;
+  --ch-accent-hover : #6ee89a;
+  --ch-accent-soft  : rgba(74, 222, 128, 0.15);
+
+  --ch-success      : #86efac;
+  --ch-success-soft : rgba(134, 239, 172, 0.15);
+  --ch-warning      : #fde68a;
+  --ch-warning-soft : rgba(253, 230, 138, 0.15);
+  --ch-danger       : #fca5a5;
+  --ch-danger-soft  : rgba(252, 165, 165, 0.15);
+  --ch-info         : #7dd3fc;
+
+  --ch-text-primary : #e8fdf0;
+  --ch-text-secondary: #7ab890;
+  --ch-text-muted   : #3d6b4e;
+  --ch-text-inverse : #0a1a0f;
+
+  --ch-border       : rgba(74, 222, 128, 0.12);
+  --ch-border-focus : var(--ch-accent);
+
+  --ch-shadow-sm    : 0 2px 8px rgba(0,0,0,0.5);
+  --ch-shadow-md    : 0 4px 20px rgba(0,0,0,0.6);
+  --ch-shadow-lg    : 0 8px 40px rgba(0,0,0,0.7);
+  --ch-shadow-glow  : 0 0 24px rgba(74, 222, 128, 0.3);
+}
+
+/* --- PURPLE --- */
+[data-theme="purple"] {
+  --ch-bg-base      : #0e0618;
+  --ch-bg-surface   : #150a24;
+  --ch-bg-elevated  : #1d1030;
+  --ch-bg-overlay   : #26163c;
+
+  --ch-accent       : #c084fc;
+  --ch-accent-hover : #d4a4ff;
+  --ch-accent-soft  : rgba(192, 132, 252, 0.15);
+
+  --ch-success      : #86efac;
+  --ch-success-soft : rgba(134, 239, 172, 0.15);
+  --ch-warning      : #fde68a;
+  --ch-warning-soft : rgba(253, 230, 138, 0.15);
+  --ch-danger       : #fca5a5;
+  --ch-danger-soft  : rgba(252, 165, 165, 0.15);
+  --ch-info         : #93c5fd;
+
+  --ch-text-primary : #f5f0ff;
+  --ch-text-secondary: #a580c8;
+  --ch-text-muted   : #5c3d7a;
+  --ch-text-inverse : #0e0618;
+
+  --ch-border       : rgba(192, 132, 252, 0.1);
+  --ch-border-focus : var(--ch-accent);
+
+  --ch-shadow-sm    : 0 2px 8px rgba(0,0,0,0.5);
+  --ch-shadow-md    : 0 4px 20px rgba(0,0,0,0.6);
+  --ch-shadow-lg    : 0 8px 40px rgba(0,0,0,0.7);
+  --ch-shadow-glow  : 0 0 24px rgba(192, 132, 252, 0.35);
+}
+
+/* --- GOLD --- */
+[data-theme="gold"] {
+  --ch-bg-base      : #12100a;
+  --ch-bg-surface   : #1c180f;
+  --ch-bg-elevated  : #252016;
+  --ch-bg-overlay   : #2e2818;
+
+  --ch-accent       : #f59e0b;
+  --ch-accent-hover : #fbbf24;
+  --ch-accent-soft  : rgba(245, 158, 11, 0.15);
+
+  --ch-success      : #86efac;
+  --ch-success-soft : rgba(134, 239, 172, 0.15);
+  --ch-warning      : #fde68a;
+  --ch-warning-soft : rgba(253, 230, 138, 0.15);
+  --ch-danger       : #fca5a5;
+  --ch-danger-soft  : rgba(252, 165, 165, 0.15);
+  --ch-info         : #7dd3fc;
+
+  --ch-text-primary : #fef9ee;
+  --ch-text-secondary: #b8a060;
+  --ch-text-muted   : #6b5a30;
+  --ch-text-inverse : #12100a;
+
+  --ch-border       : rgba(245, 158, 11, 0.12);
+  --ch-border-focus : var(--ch-accent);
+
+  --ch-shadow-sm    : 0 2px 8px rgba(0,0,0,0.5);
+  --ch-shadow-md    : 0 4px 20px rgba(0,0,0,0.6);
+  --ch-shadow-lg    : 0 8px 40px rgba(0,0,0,0.7);
+  --ch-shadow-glow  : 0 0 24px rgba(245, 158, 11, 0.3);
+}

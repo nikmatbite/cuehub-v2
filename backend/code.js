@@ -1,77 +1,80 @@
+// =============================================================
+// CueHub v3 — code.gs
+// Entry point GAS Web App: doPost router
+// =============================================================
+
+// --- Route Map ---
+// Format: 'resource.action': handlerFunction
 var ROUTES = {
-  'auth.register':              function (p) { return AuthService.register(p); },
-  'auth.login':                 function (p) { return AuthService.login(p); },
+  // Auth
+  'auth.login'   : authLogin,
+  'auth.logout'  : authLogout,
+  'auth.me'      : authMe,
+  'auth.register': authRegister,
 
-  'player.create':              function (p) { return PlayerService.create(p); },
-  'player.getAll':              function (p) { return PlayerService.getAll(); },
-  'player.getById':             function (p) { return PlayerService.getById(p); },
-  'player.update':              function (p) { return PlayerService.update(p); },
-  'player.delete':              function (p) { return PlayerService.delete(p); },
+  // Players
+  'player.getAll'   : playerGetAll,
+  'player.getById'  : playerGetById,
+  'player.create'   : playerCreate,
+  'player.update'   : playerUpdate,
+  'player.delete'   : playerDelete,
 
-  'session.create':             function (p) { return SessionService.create(p); },
-  'session.getAll':             function (p) { return SessionService.getAll(p); },
-  'session.getById':            function (p) { return SessionService.getById(p); },
-  'session.update':             function (p) { return SessionService.update(p); },
-  'session.updateStatus':       function (p) { return SessionService.updateStatus(p); },
-  'session.addPlayer':          function (p) { return SessionService.addPlayer(p); },
-  'session.removePlayer':       function (p) { return SessionService.removePlayer(p); },
-  'session.getPlayers':         function (p) { return SessionService.getPlayers(p); },
+  // Sessions
+  'session.create'  : sessionCreate,
+  'session.getAll'  : sessionGetAll,
+  'session.getById' : sessionGetById,
+  'session.finish'  : sessionFinish,
 
-  'game.getAll':                function (p) { return GameService.getAll(); },
-  'game.getById':               function (p) { return GameService.getById(p); },
+  // Segments (satu blok permainan dalam sesi)
+  'segment.start'   : segmentStart,    // mulai segment baru (generate siklus)
+  'segment.finish'  : segmentFinish,   // End Game
+  'segment.shuffle' : segmentShuffle,  // Acak ulang siklus, mode+player sama
+  'segment.getActive': segmentGetActive,
 
-  'sessionGame.create':         function (p) { return GameService.sessionCreate(p); },
-  'sessionGame.getAll':         function (p) { return GameService.sessionGetAll(p); },
-  'sessionGame.getById':        function (p) { return GameService.sessionGetById(p); },
-  'sessionGame.update':         function (p) { return GameService.sessionUpdate(p); },
-  'sessionGame.updateStatus':   function (p) { return GameService.sessionUpdateStatus(p); },
+  // Matches
+  'match.submitWinner': matchSubmitWinner,
+  'match.getBySegment': matchGetBySegment,
 
-  'match.queueAdd':          function (p) { return MatchService.queueAdd(p); },
-  'match.queueGet':          function (p) { return MatchService.queueGet(p); },
-  'match.queueRemove':       function (p) { return MatchService.queueRemove(p); },
-  'match.queueReorder':      function (p) { return MatchService.queueReorder(p); },
-  'match.create':            function (p) { return MatchService.create(p); },
-  'match.getAll':            function (p) { return MatchService.getAll(p); },
-  'match.getById':           function (p) { return MatchService.getById(p); },
-  'match.start':             function (p) { return MatchService.start(p); },
-  'match.finish':            function (p) { return MatchService.finish(p); },
-  'match.cancel':            function (p) { return MatchService.cancel(p); },
-  'match.addScore':          function (p) { return MatchService.addScore(p); },
-  'match.getScores':         function (p) { return MatchService.getScores(p); },
-  'match.generateRotation':  function (p) { return MatchService.generateRotation(p); },
-  'statistics.compute':      function (p) { return StatisticsService.compute(p); },
-  'statistics.getSession':   function (p) { return StatisticsService.getSessionStats(p); },
-  'statistics.getPlayer':    function (p) { return StatisticsService.getPlayerStats(p); },
-  'statistics.getAllPlayers': function (p) { return StatisticsService.getAllPlayerStats(); }
+  // Statistics
+  'stats.getPlayer'  : statsGetPlayer,
+  'stats.getAllPlayers': statsGetAllPlayers,
+  'stats.getSession' : statsGetSession
 };
 
+// --- doGet: untuk health check / browser test ---
 function doGet(e) {
-  return route(e);
+  return ContentService
+    .createTextOutput(JSON.stringify({ status: 'CueHub v3 API is running' }))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
+// --- doPost: semua request masuk sini ---
 function doPost(e) {
-  Logger.log('=== FULL REQUEST ===');
-  Logger.log('e: ' + JSON.stringify(e));
-  Logger.log('postData: ' + JSON.stringify(e.postData));
-  Logger.log('postData.contents: ' + (e.postData ? e.postData.contents : 'NULL'));
-  return route(e);
-}
-
-function route(e) {
-  var responseObj;
   try {
-    var request = parseRequest(e);
-    var action  = request.action;
-    var payload = request.payload || {};
+    var body = parseJson(e.postData.contents);
+    if (!body) return fail(ERR.MISSING_PARAMS);
 
-    if (!action) throw new ApiError('MISSING_ACTION');
+    var action = body.action;
+    if (!action) return fail(ERR.INVALID_ACTION);
 
     var handler = ROUTES[action];
-    if (!handler) throw new ApiError('UNKNOWN_ACTION');
+    if (!handler) return fail(ERR.INVALID_ACTION);
 
-    responseObj = successResponse(handler(payload));
-  } catch (err) {
-    responseObj = errorResponse(err);
+    // Endpoint public (tidak butuh token)
+    var publicRoutes = ['auth.login', 'auth.register'];
+    var isPublic = publicRoutes.indexOf(action) !== -1;
+
+    var user = null;
+    if (!isPublic) {
+      user = validateToken(body.token);
+      if (!user) return fail(ERR.UNAUTHORIZED);
+    }
+
+    // Panggil handler dengan params dan user
+    return handler(body.params || {}, user);
+
+  } catch(err) {
+    logAction('SYSTEM', 'SERVER_ERROR', err.message);
+    return fail(ERR.SERVER_ERROR);
   }
-  return buildOutput(responseObj);
 }

@@ -1,107 +1,207 @@
 <!DOCTYPE html>
-<html lang="id" data-theme="blue">
+<html lang="id" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <title>CueHub</title>
-  <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-  <meta name="theme-color" content="#f8fafc">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="CueHub — Billiard Session Manager">
+  <meta name="theme-color" content="#0d0d1a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>CueHub v3</title>
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- CueHub styles -->
+  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/main.css">
+
+  <style>
+    /* Auth screen — tidak pakai app layout biasa */
+    .ch-auth-screen {
+      min-height       : 100vh;
+      display          : flex;
+      flex-direction   : column;
+      align-items      : center;
+      justify-content  : center;
+      padding          : 24px 20px;
+      background       : var(--ch-bg-base);
+    }
+
+    .ch-auth-brand {
+      text-align    : center;
+      margin-bottom : 36px;
+    }
+
+    .ch-logo {
+      font-size     : 3.5rem;
+      margin-bottom : 8px;
+      filter        : drop-shadow(0 0 20px rgba(124,106,247,0.4));
+    }
+
+    .ch-brand-name {
+      font-family : var(--ch-font-display);
+      font-size   : 2.2rem;
+      font-weight : 700;
+      letter-spacing: -0.02em;
+      color       : var(--ch-text-primary);
+      margin      : 0;
+    }
+
+    .ch-brand-sub {
+      color      : var(--ch-text-muted);
+      font-size  : 0.88rem;
+      margin-top : 6px;
+    }
+
+    .ch-auth-form {
+      width         : 100%;
+      max-width     : 400px;
+      background    : var(--ch-bg-surface);
+      border        : 1px solid var(--ch-border);
+      border-radius : var(--ch-radius-xl);
+      padding       : 28px 24px;
+      box-shadow    : var(--ch-shadow-lg);
+    }
+
+    .ch-auth-form h2 {
+      font-size    : 1.4rem;
+      margin-bottom: 6px;
+    }
+
+    /* Pulse dot for active session */
+    .pulse-dot {
+      width        : 10px;
+      height       : 10px;
+      background   : var(--ch-success);
+      border-radius: 50%;
+      animation    : pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    /* Player modal */
+    #player-modal .modal-content {
+      background    : var(--ch-bg-surface);
+      border        : 1px solid var(--ch-border);
+      border-radius : var(--ch-radius-xl);
+      color         : var(--ch-text-primary);
+    }
+
+    #player-modal .modal-header {
+      border-bottom : 1px solid var(--ch-border);
+      padding       : 20px 24px 16px;
+    }
+
+    #player-modal .modal-body { padding: 20px 24px; }
+
+    #player-modal .btn-close {
+      filter: invert(1) opacity(0.5);
+    }
+  </style>
 </head>
-<body class="auth-page">
-  <div class="auth-wrapper">
-    <div class="auth-card">
-      <div class="auth-logo">
-        <i class="fa-solid fa-circle-dot"></i>
-        <span class="auth-logo-text">CueHub</span>
-      </div>
 
-      <!-- Tabs -->
-      <div class="auth-tabs">
-        <button class="nav-link active" id="tab-login"    data-lang="AUTH_LOGIN"></button>
-        <button class="nav-link"        id="tab-register" data-lang="AUTH_REGISTER"></button>
-      </div>
+<body>
+  <!-- Main app container -->
+  <div id="app"></div>
 
-      <!-- Login form -->
-      <form class="auth-form" id="form-login" novalidate>
-        <div>
-          <label class="form-label" for="login-email" data-lang="AUTH_EMAIL"></label>
-          <input class="form-control" id="login-email" type="email"
-                 autocomplete="email" placeholder="nama@email.com" required>
-        </div>
-        <div>
-          <label class="form-label" for="login-password" data-lang="AUTH_PASSWORD"></label>
-          <div class="input-password-wrap">
-            <input class="form-control" id="login-password" type="password"
-                   autocomplete="current-password" required>
-            <button type="button" class="btn-toggle-pw" data-target="login-password">
-              <i class="fa-solid fa-eye"></i>
-            </button>
+  <!-- Bottom nav (injected by AppShell) -->
+
+  <!-- Loading overlay -->
+  <div id="loading-overlay" class="d-none">
+    <div class="ch-spinner"></div>
+    <div class="loading-text" data-lang="loading"></div>
+  </div>
+
+  <!-- Toast container -->
+  <div id="toast-container"></div>
+
+  <!-- Confirm modal -->
+  <div class="modal fade" id="confirm-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-body" style="padding:28px 24px">
+          <p class="confirm-message"></p>
+          <div class="flex gap-3">
+            <button class="ch-btn ch-btn-surface ch-btn-block btn-confirm-no" data-lang="cancel"></button>
+            <button class="ch-btn ch-btn-primary ch-btn-block btn-confirm-yes" data-lang="yes"></button>
           </div>
         </div>
-        <div id="login-error" class="ch-error d-none"></div>
-        <button type="submit" class="btn-auth btn-ch-primary" id="btn-login">
-          <span class="btn-label" data-lang="AUTH_LOGIN"></span>
-          <span class="btn-spinner d-none"><i class="fa-solid fa-spinner fa-spin"></i></span>
-        </button>
-      </form>
-
-      <!-- Register form -->
-      <form class="auth-form d-none" id="form-register" novalidate>
-        <div>
-          <label class="form-label" for="reg-name" data-lang="AUTH_DISPLAY_NAME"></label>
-          <input class="form-control" id="reg-name" type="text"
-                 autocomplete="name" required>
-        </div>
-        <div>
-          <label class="form-label" for="reg-email" data-lang="AUTH_EMAIL"></label>
-          <input class="form-control" id="reg-email" type="email"
-                 autocomplete="email" placeholder="nama@email.com" required>
-        </div>
-        <div>
-          <label class="form-label" for="reg-password" data-lang="AUTH_PASSWORD"></label>
-          <div class="input-password-wrap">
-            <input class="form-control" id="reg-password" type="password"
-                   autocomplete="new-password" required>
-            <button type="button" class="btn-toggle-pw" data-target="reg-password">
-              <i class="fa-solid fa-eye"></i>
-            </button>
-          </div>
-        </div>
-        <div>
-          <label class="form-label" for="reg-timezone" data-lang="AUTH_TIMEZONE"></label>
-          <select class="form-control" id="reg-timezone">
-            <option value="Asia/Jakarta">WIB — Asia/Jakarta</option>
-            <option value="Asia/Makassar">WITA — Asia/Makassar</option>
-            <option value="Asia/Jayapura">WIT — Asia/Jayapura</option>
-            <option value="Asia/Singapore">SGT — Asia/Singapore</option>
-            <option value="UTC">UTC</option>
-          </select>
-        </div>
-        <div>
-          <label class="form-label" for="reg-language" data-lang="AUTH_LANGUAGE"></label>
-          <select class="form-control" id="reg-language">
-            <option value="id">Indonesia</option>
-            <option value="en">English</option>
-          </select>
-        </div>
-        <div id="reg-error"   class="ch-error   d-none"></div>
-        <div id="reg-success" class="ch-success d-none"></div>
-        <button type="submit" class="btn-auth btn-ch-primary" id="btn-register">
-          <span class="btn-label" data-lang="AUTH_REGISTER"></span>
-          <span class="btn-spinner d-none"><i class="fa-solid fa-spinner fa-spin"></i></span>
-        </button>
-      </form>
+      </div>
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- Player add/edit modal -->
+  <div class="modal fade" id="player-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" style="font-family:var(--ch-font-display);font-weight:700"></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="pm-player-id">
+          <div class="ch-form-group">
+            <label class="ch-label" data-lang="player_name"></label>
+            <input id="pm-name" class="ch-input" type="text" data-lang-placeholder="player_name">
+          </div>
+          <div class="ch-form-group">
+            <label class="ch-label" data-lang="nickname_optional"></label>
+            <input id="pm-nickname" class="ch-input" type="text" data-lang-placeholder="nickname">
+          </div>
+          <button class="ch-btn ch-btn-primary ch-btn-block mb-2" id="pm-save" data-lang="save"></button>
+          <button class="ch-btn ch-btn-danger ch-btn-block" id="pm-delete" style="display:none" data-lang="delete_player"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- CueHub scripts — urutan penting -->
   <script src="js/lang.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/store.js"></script>
   <script src="js/api.js"></script>
-  <script src="js/sw-register.js"></script>
-  <script src="js/index.js"></script>
+  <script src="js/router.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/pages.js"></script>
+
+  <script>
+    // ─── APP INIT ───────────────────────────────────
+    (function() {
+      // Apply saved theme
+      var theme = store.getTheme();
+      document.documentElement.setAttribute('data-theme', theme);
+
+      // Apply saved lang
+      applyLang();
+
+      // Route definitions
+      router.on('login',     function() { PageLogin.render(); });
+      router.on('dashboard', function() { PageDashboard.render(); });
+      router.on('setup',     function() { PageSetup.render(); });
+      router.on('play',      function() { PagePlay.render(); });
+      router.on('players',   function() { PagePlayers.render(); });
+      router.on('stats',     function() { PageStats.render(); });
+      router.on('history',   function() { PageHistory.render(); });
+      router.on('settings',  function() { PageSettings.render(); });
+
+      // Route guard
+      var publicRoutes = ['login'];
+      router.beforeEach(function(route) {
+        if (publicRoutes.indexOf(route) !== -1) return true;
+        if (!store.isLoggedIn()) return 'login';
+        return true;
+      });
+
+      // Start router
+      router.init();
+    })();
+  </script>
 </body>
 </html>

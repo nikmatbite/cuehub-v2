@@ -1,221 +1,190 @@
-var SessionService = {
+// =============================================================
+// CueHub v3 — session.gs
+// Session management — satu malam = satu session
+// =============================================================
 
-  create: function (payload) {
-    requireFields(payload, ['title', 'date']);
-
-    var sheet      = getSheet('db', SHEET_SESSION_MASTER);
-    var allSessions = sheetToObjects(sheet);
-
-    // auto-increment session_number dari baris yang ada
-    var maxNumber = 0;
-    allSessions.forEach(function (r) {
-      var n = parseInt(r.session_number, 10);
-      if (!isNaN(n) && n > maxNumber) maxNumber = n;
-    });
-
-    var now     = nowISOString();
-    var session = {
-      session_id:     generateUUID(),
-      session_number: maxNumber + 1,
-      title:          payload.title,
-      date:           payload.date,
-      start_time:     payload.start_time  || '',
-      end_time:       payload.end_time    || '',
-      location:       payload.location    || '',
-      notes:          payload.notes       || '',
-      status:         SESSION_STATUS.SCHEDULED,
-      created_by:     payload._user_id    || '',
-      created_at:     now,
-      updated_by:     '',
-      updated_at:     ''
-    };
-
-    withLock(function () { appendRowObject(sheet, session); });
-    logAction(payload._user_id, 'SESSION_CREATE', session.session_id);
-
-    return session;
-  },
-
-  getAll: function (payload) {
-    var sheet = getSheet('db', SHEET_SESSION_MASTER);
-    var rows  = sheetToObjects(sheet);
-
-    // filter opsional by status
-    if (payload && payload.status) {
-      rows = rows.filter(function (r) { return r.status === payload.status; });
+// Buat session baru
+// params: { notes? }
+function sessionCreate(params, user) {
+  return withLock(function() {
+    // Cek apakah ada session ongoing
+    var sheet = getDbSheet(DB_SHEET.SESSION_MASTER);
+    var rows = sheetToObjects(sheet);
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i].status === SESSION_STATUS.ONGOING) {
+        // Return session yang masih ongoing (resume)
+        return ok({ session_id: rows[i].session_id, resumed: true });
+      }
     }
 
-    // sort descending by session_number
-    rows.sort(function (a, b) {
-      return parseInt(b.session_number, 10) - parseInt(a.session_number, 10);
+    // Hitung session_number (sequential display number)
+    var sessionNumber = rows.length + 1;
+
+    var sessionId = generateUUID();
+    appendRow(sheet, {
+      session_id    : sessionId,
+      session_number: sessionNumber,
+      started_at    : now(),
+      ended_at      : '',
+      status        : SESSION_STATUS.ONGOING,
+      notes         : params.notes || ''
     });
 
-    return rows.map(function (r) { return SessionService._sanitize(r); });
-  },
+    logAction(user.user_id, 'session.create', 'Session #' + sessionNumber);
+    return ok({ session_id: sessionId, session_number: sessionNumber, resumed: false });
+  });
+}
 
-  getById: function (payload) {
-    requireFields(payload, ['session_id']);
+// Ambil semua session (untuk halaman History)
+// params: { limit? } — default 20 sesi terakhir
+function sessionGetAll(params, user) {
+  var sheet = getDbSheet(DB_SHEET.SESSION_MASTER);
+  var rows = sheetToObjects(sheet);
 
-    var sheet   = getSheet('db', SHEET_SESSION_MASTER);
-    var session = findRowByField(sheet, 'session_id', payload.session_id);
-    if (!session) throw new ApiError('SESSION_NOT_FOUND');
+  // Sort by started_at descending
+  rows.sort(function(a, b) {
+    return new Date(b.started_at) - new Date(a.started_at);
+  });
 
-    var result  = SessionService._sanitize(session);
-    result.players = SessionService._getPlayers(payload.session_id);
+  var limit = params.limit ? parseInt(params.limit) : 20;
+  var result = rows.slice(0, limit);
+  return ok(result);
+}
 
-    return result;
-  },
+// Ambil 1 session + semua segment-nya
+// params: { session_id }
+function sessionGetById(params, user) {
+  if (!requireFields(params, ['session_id'])) return fail(ERR.MISSING_PARAMS);
 
-  update: function (payload) {
-    requireFields(payload, ['session_id']);
+  var sessionSheet = getDbSheet(DB_SHEET.SESSION_MASTER);
+  var session = findRowByField(sessionSheet, 'session_id', params.session_id);
+  if (!session) return fail(ERR.SESSION_NOT_FOUND);
 
-    var sheet   = getSheet('db', SHEET_SESSION_MASTER);
-    var session = findRowByField(sheet, 'session_id', payload.session_id);
-    if (!session) throw new ApiError('SESSION_NOT_FOUND');
+  // Ambil semua segment dalam session ini
+  var segSheet = getDbSheet(DB_SHEET.SESSION_SEGMENTS);
+  var allSegments = sheetToObjects(segSheet);
+  var segments = allSegments.filter(function(s) {
+    return s.session_id === params.session_id;
+  });
+  segments.sort(function(a, b) { return a.segment_order - b.segment_order; });
 
-    if (session.status === SESSION_STATUS.FINISHED) throw new ApiError('SESSION_ALREADY_FINISHED');
+  return ok({ session: session, segments: segments });
+}
 
-    var updates = { updated_by: payload._user_id || '', updated_at: nowISOString() };
-    ['title', 'date', 'start_time', 'end_time', 'location', 'notes'].forEach(function (f) {
-      if (payload[f] !== undefined) updates[f] = payload[f];
-    });
+// End session — tutup malam ini
+// params: { session_id }
+function sessionFinish(params, user) {
+  if (!requireFields(params, ['session_id'])) return fail(ERR.MISSING_PARAMS);
 
-    withLock(function () { updateRowObject(sheet, session._rowIndex, updates); });
-    logAction(payload._user_id, 'SESSION_UPDATE', payload.session_id);
+  return withLock(function() {
+    var sessionSheet = getDbSheet(DB_SHEET.SESSION_MASTER);
+    var session = findRowByField(sessionSheet, 'session_id', params.session_id);
+    if (!session) return fail(ERR.SESSION_NOT_FOUND);
+    if (session.status === SESSION_STATUS.FINISHED) return fail(ERR.SESSION_FINISHED);
 
-    return Object.assign({}, SessionService._sanitize(session), updates);
-  },
-
-  updateStatus: function (payload) {
-    requireFields(payload, ['session_id', 'status']);
-
-    if (!Object.values(SESSION_STATUS).includes(payload.status)) {
-      throw new ApiError('INVALID_STATUS');
+    // Finish semua segment yang masih ongoing
+    var segSheet = getDbSheet(DB_SHEET.SESSION_SEGMENTS);
+    var allSegments = sheetToObjects(segSheet);
+    var endTime = now();
+    for (var i = 0; i < allSegments.length; i++) {
+      if (allSegments[i].session_id === params.session_id &&
+          allSegments[i].status === SEGMENT_STATUS.ONGOING) {
+        updateRowById(segSheet, 'segment_id', allSegments[i].segment_id, {
+          status  : SEGMENT_STATUS.FINISHED,
+          ended_at: endTime
+        });
+      }
     }
 
-    var sheet   = getSheet('db', SHEET_SESSION_MASTER);
-    var session = findRowByField(sheet, 'session_id', payload.session_id);
-    if (!session) throw new ApiError('SESSION_NOT_FOUND');
+    // Tutup session
+    updateRowById(sessionSheet, 'session_id', params.session_id, {
+      status  : SESSION_STATUS.FINISHED,
+      ended_at: endTime
+    });
 
-    var updates = {
-      status:     payload.status,
-      updated_by: payload._user_id || '',
-      updated_at: nowISOString()
-    };
+    // Hitung statistik akhir semua player dalam session ini
+    _computeSessionStats(params.session_id);
 
-    // otomatis isi end_time saat session di-finish
-    if (payload.status === SESSION_STATUS.FINISHED && !session.end_time) {
-      updates.end_time = nowISOString();
+    logAction(user.user_id, 'session.finish', params.session_id);
+    return ok({ session_id: params.session_id });
+  });
+}
+
+// --- Helper: update player stats setelah session selesai ---
+function _computeSessionStats(sessionId) {
+  try {
+    var matchSheet = getDbSheet(DB_SHEET.MATCH_MASTER);
+    var matches = sheetToObjects(matchSheet);
+
+    // Ambil match yang ada di segment session ini
+    var segSheet = getDbSheet(DB_SHEET.SESSION_SEGMENTS);
+    var segments = sheetToObjects(segSheet).filter(function(s) {
+      return s.session_id === sessionId;
+    });
+    var segIds = segments.map(function(s) { return s.segment_id; });
+
+    var sessionMatches = matches.filter(function(m) {
+      return segIds.indexOf(m.segment_id) !== -1;
+    });
+
+    // Kumpulkan player stats dari session ini
+    var playerData = {}; // { player_id: { wins: 0, losses: 0, matches: 0 } }
+
+    for (var i = 0; i < sessionMatches.length; i++) {
+      var m = sessionMatches[i];
+      var pIds = parseJson(m.player_ids) || [];
+      var wIds = parseJson(m.winner_ids) || [];
+
+      for (var j = 0; j < pIds.length; j++) {
+        var pid = pIds[j];
+        if (!playerData[pid]) playerData[pid] = { wins: 0, losses: 0, matches: 0 };
+        playerData[pid].matches++;
+        if (wIds.indexOf(pid) !== -1) {
+          playerData[pid].wins++;
+        } else {
+          playerData[pid].losses++;
+        }
+      }
     }
 
-    withLock(function () { updateRowObject(sheet, session._rowIndex, updates); });
-    logAction(payload._user_id, 'SESSION_STATUS_UPDATE', payload.session_id + ':' + payload.status);
+    // Update PLAYER_STATS dan PLAYER_MASTER
+    var statsSheet = getDbSheet(DB_SHEET.PLAYER_STATS);
+    var masterSheet = getDbSheet(DB_SHEET.PLAYER_MASTER);
+    var timestamp = now();
 
-    return Object.assign({}, SessionService._sanitize(session), updates);
-  },
+    for (var pid in playerData) {
+      var d = playerData[pid];
+      var stats = findRowByField(statsSheet, 'player_id', pid);
+      var master = findRowByField(masterSheet, 'player_id', pid);
+      if (!stats || !master) continue;
 
-  addPlayer: function (payload) {
-    requireFields(payload, ['session_id', 'player_id']);
+      var newMatchCount   = (parseInt(stats.match_count) || 0) + d.matches;
+      var newWinCount     = (parseInt(stats.win_count) || 0) + d.wins;
+      var newLossCount    = (parseInt(stats.loss_count) || 0) + d.losses;
+      var newWinRate      = newMatchCount > 0 ? Math.round((newWinCount / newMatchCount) * 100) : 0;
+      var newSessionCount = (parseInt(stats.session_count) || 0) + 1;
+      var currentElo      = parseFloat(master.elo) || ELO.DEFAULT;
+      var peakElo         = Math.max(parseFloat(stats.peak_elo) || ELO.DEFAULT, currentElo);
 
-    // validasi session ada
-    var sSheet  = getSheet('db', SHEET_SESSION_MASTER);
-    var session = findRowByField(sSheet, 'session_id', payload.session_id);
-    if (!session) throw new ApiError('SESSION_NOT_FOUND');
-    if (session.status === SESSION_STATUS.FINISHED) throw new ApiError('SESSION_ALREADY_FINISHED');
-
-    // validasi player ada
-    var pSheet = getSheet('db', SHEET_PLAYER_MASTER);
-    var player = findRowByField(pSheet, 'player_id', payload.player_id);
-    if (!player) throw new ApiError('PLAYER_NOT_FOUND');
-
-    // cek sudah terdaftar di session ini
-    var spSheet  = getSheet('db', SHEET_SESSION_PLAYERS);
-    var existing = sheetToObjects(spSheet).filter(function (r) {
-      return r.session_id === payload.session_id &&
-             r.player_id  === payload.player_id  &&
-             r.leave_time === '';
-    });
-    if (existing.length > 0) throw new ApiError('PLAYER_ALREADY_IN_SESSION');
-
-    var entry = {
-      session_player_id: generateUUID(),
-      session_id:        payload.session_id,
-      player_id:         payload.player_id,
-      join_time:         nowISOString(),
-      leave_time:        ''
-    };
-
-    withLock(function () { appendRowObject(spSheet, entry); });
-    logAction(payload._user_id, 'SESSION_ADD_PLAYER', payload.session_id + ':' + payload.player_id);
-
-    return entry;
-  },
-
-  removePlayer: function (payload) {
-    requireFields(payload, ['session_id', 'player_id']);
-
-    var spSheet = getSheet('db', SHEET_SESSION_PLAYERS);
-    var rows    = sheetToObjects(spSheet).filter(function (r) {
-      return r.session_id === payload.session_id &&
-             r.player_id  === payload.player_id  &&
-             r.leave_time === '';
-    });
-    if (rows.length === 0) throw new ApiError('PLAYER_NOT_IN_SESSION');
-
-    var now = nowISOString();
-    withLock(function () {
-      rows.forEach(function (r) {
-        updateRowObject(spSheet, r._rowIndex, { leave_time: now });
+      updateRowById(statsSheet, 'player_id', pid, {
+        session_count: newSessionCount,
+        match_count  : newMatchCount,
+        win_count    : newWinCount,
+        loss_count   : newLossCount,
+        win_rate     : newWinRate,
+        current_elo  : currentElo,
+        peak_elo     : peakElo,
+        last_updated : timestamp
       });
-    });
-    logAction(payload._user_id, 'SESSION_REMOVE_PLAYER', payload.session_id + ':' + payload.player_id);
 
-    return { session_id: payload.session_id, player_id: payload.player_id, leave_time: now };
-  },
-
-  getPlayers: function (payload) {
-    requireFields(payload, ['session_id']);
-    return SessionService._getPlayers(payload.session_id);
-  },
-
-  // internal helper — dipakai getById dan getPlayers
-  _getPlayers: function (sessionId) {
-    var spSheet  = getSheet('db', SHEET_SESSION_PLAYERS);
-    var pSheet   = getSheet('db', SHEET_PLAYER_MASTER);
-    var spRows   = findAllByField(spSheet, 'session_id', sessionId);
-    var allPlayers = sheetToObjects(pSheet);
-
-    return spRows.map(function (sp) {
-      var player = allPlayers.filter(function (p) {
-        return p.player_id === sp.player_id;
-      })[0] || {};
-      return {
-        session_player_id: sp.session_player_id,
-        player_id:         sp.player_id,
-        player_name:       player.player_name || '',
-        nickname:          player.nickname    || '',
-        join_time:         sp.join_time,
-        leave_time:        sp.leave_time
-      };
-    });
-  },
-
-  _sanitize: function (row) {
-    return {
-      session_id:     row.session_id,
-      session_number: row.session_number,
-      title:          row.title,
-      date:           row.date,
-      start_time:     row.start_time,
-      end_time:       row.end_time,
-      location:       row.location,
-      notes:          row.notes,
-      status:         row.status,
-      created_by:     row.created_by,
-      created_at:     row.created_at,
-      updated_by:     row.updated_by,
-      updated_at:     row.updated_at
-    };
+      updateRowById(masterSheet, 'player_id', pid, {
+        total_games  : (parseInt(master.total_games) || 0) + d.matches,
+        total_wins   : (parseInt(master.total_wins) || 0) + d.wins,
+        total_losses : (parseInt(master.total_losses) || 0) + d.losses,
+        last_played_at: timestamp
+      });
+    }
+  } catch(e) {
+    logAction('SYSTEM', 'stats_compute_error', e.message);
   }
-
-};
+}

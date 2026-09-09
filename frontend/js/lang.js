@@ -1,624 +1,371 @@
-var STRINGS = {
-    // Auth
-    AUTH_LOGIN: {
-		id: 'Masuk',
-		en: 'Sign In' },
-    AUTH_REGISTER: {
-		id: 'Daftar',
-		en: 'Register' },
-    AUTH_EMAIL: {
-		id: 'Email',
-		en: 'Email' },
-    AUTH_PASSWORD: {
-		id: 'Password',
-		en: 'Password' },
-    AUTH_DISPLAY_NAME: {
-		id: 'Nama User',
-		en: 'Display Name' },
-    AUTH_TIMEZONE: {
-		id: 'Zona waktu',
-		en: 'Timezone' },
-    AUTH_LANGUAGE: {
-		id: 'Bahasa',
-		en: 'Language' },
-    AUTH_PENDING_TITLE: {
-		id: 'Akun dalam verifikasi', 
-		en: 'Account under review' },
-    AUTH_PENDING_MSG: {
-		id: 'Akun kamu sedang di verifikasi oleh Admin. Coba lagi setelah dapat konfirmasi.',
-		en: 'Your account is being verified by the admin. Please try again after confirmation.' },
+// =============================================================
+// CueHub v3 — lang.js
+// Semua string UI dalam dua bahasa: ID (Indonesian) dan EN (English)
+// Tidak ada teks hardcode di file JS/HTML lain
+// =============================================================
 
-    // Error codes dari backend
-    INVALID_CREDENTIALS: {
-		id: 'Email atau password salah.',
-		en: 'Incorrect email or password.' },
-    USER_INACTIVE: {
-		id: 'Akun tidak aktif. Hubungi admin.',
-		en: 'Account is inactive. Contact admin.' },
-    ACCOUNT_PENDING: {
-		id: 'Akun kamu belum diaktifkan. Tunggu verifikasi dari admin.',
-		en: 'Your account has not been activated yet. Wait for admin verification.' },
-    CORRUPT_PASSWORD: {
-		id: 'Data akun bermasalah. Hubungi admin.',
-		en: 'Account data issue. Contact admin.' },
-    CONFIG_NOT_FOUND: {
-		id: 'Konfigurasi akun tidak ditemukan. Hubungi admin.',
-		en: 'Account configuration not found. Contact admin.' },
-    EMAIL_ALREADY_EXISTS: {
-		id: 'Email sudah terdaftar',
-		en: 'Email is already registered.' },
-    INVALID_EMAIL: {
-		id: 'Format email tidak valid.',
-		en: 'Invalid email format.' },
-    PASSWORD_MIN_6: {
-		id: 'Password minimal 6 karakter.',
-		en: 'Password must be at least 6 characters.' },
-    MISSING_FIELD: {
-		id: 'Harap lengkapi semua field yang wajib diisi.',
-		en: 'Please fill in all required fields.' },
-    INTERNAL_ERROR: {
-		id: 'Terjadi kesalahan pada server. Coba lagi.',
-		en: 'Server error. Please try again.' },
-    LOCK_TIMEOUT: {
-		id: 'Server sedang sibuk, coba lagi sebentar.',
-		en: 'Server is busy, please try again shortly.' },
-    NETWORK_ERROR: {
-		id: 'Tidak dapat terhubung ke server. Periksa koneksi internet.',
-		en: 'Unable to connect to server. Check your internet connection.' },
+var LANG = {
+  id: {
+    // --- App ---
+    app_name          : 'CueHub',
+    app_tagline       : 'Manajer Sesi Biliar',
 
-    // Nav
-    NAV_HOME: {
-		id: 'Home',
-		en: 'Home' },
-    NAV_SESSION: {
-		id: 'Sesi',
-		en: 'Session' },
-    NAV_PLAYERS: {
-		id: 'Pemain',
-		en: 'Players' },
-    NAV_HISTORY: {
-		id: 'Riwayat',
-		en: 'History' },
+    // --- Auth ---
+    login             : 'Masuk',
+    logout            : 'Keluar',
+    register          : 'Daftar',
+    display_name      : 'Nama Tampilan',
+    password          : 'Kata Sandi',
+    login_welcome     : 'Selamat datang kembali',
+    login_subtitle    : 'Masuk sebagai fasilitator untuk memulai sesi',
+    register_title    : 'Buat Akun',
+    register_subtitle : 'Daftarkan akun fasilitator baru',
+    no_account        : 'Belum punya akun?',
+    have_account      : 'Sudah punya akun?',
 
-    // Dashboard
-    DASH_WELCOME: {
-		id: 'Selamat datang,',
-		en: 'Welcome' },
-	DASH_BADGE_SUCCESS: {
-        id: 'Selesai',
-        en: 'Finished' },
-    DASH_TOTAL_SESSION: {
-		id: 'Total sesi',
-		en: 'Total sessions' },
-    DASH_WIN_RATE: {
-		id: 'Win rate',
-		en: 'Win rate' },
-    DASH_TOTAL_MATCH: {
-		id: 'Total match',
-		en: 'Total matches' },
-    DASH_STREAK: {
-		id: 'Streak terpanjang',
-		en: 'Longest streak' },
-    DASH_LAST_SESSION: {
-		id: 'Sesi terakhir',
-		en: 'Last session' },
-    DASH_NO_SESSION: {
-		id: 'Belum ada sesi. Yuk mulai main!',
-		en: 'No sessions yet. Start playing!' },
-    BTN_START_PLAY: {
-		id: 'Mulai main',
-		en: 'Start playing' },
+    // --- Dashboard ---
+    dashboard         : 'Dashboard',
+    start_session     : 'Mulai Sesi',
+    active_session    : 'Sesi Aktif',
+    resume_session    : 'Lanjutkan Sesi',
+    end_session       : 'Akhiri Sesi',
+    no_active_session : 'Tidak ada sesi aktif',
+    start_new         : 'Mulai sesi baru untuk bermain',
 
-    // Session
-    SESSION_ACTIVE: {
-		id: 'Sesi aktif',
-		en: 'Active session' },
-    SESSION_NO_ACTIVE: {
-		id: 'Tidak ada sesi aktif',
-		en: 'No active session' },
-    SESSION_SCHEDULED: {
-		id: 'Terjadwal',
-		en: 'Scheduled' },
-    SESSION_ONGOING: {
-		id: 'Berlangsung',
-		en: 'Ongoing' },
-    SESSION_FINISHED: {
-		id: 'Selesai',
-		en: 'Finished' },
-    SESSION_CANCELLED: {
-		id: 'Dibatalkan',
-		en: 'Cancelled' },
+    // --- Navigation ---
+    nav_home          : 'Beranda',
+    nav_players       : 'Pemain',
+    nav_history       : 'Riwayat',
+    nav_settings      : 'Pengaturan',
 
-    // Player
-    PLAYER_SEARCH: {
-		id: 'Cari nama pemain...',
-		en: 'Search player name...' },
-    PLAYER_SELECTED: {
-		id: 'pemain dipilih',
-		en: 'players selected' },
-    PLAYER_ALL: {
-		id: 'Semua pemain',
-		en: 'All players' },
-    PLAYER_NEW: {
-		id: 'Pemain baru',
-		en: 'New player' },
-    PLAYER_NAME: {
-		id: 'Nama pemain',
-		en: 'Player name' },
-    PLAYER_NICKNAME: {
-		id: 'Nama panggilan',
-		en: 'Nickname' },
-    PLAYER_PHONE: {
-		id: 'Nomor telepon',
-		en: 'Phone number' },
-    PLAYER_NOTES: {
-		id: 'Catatan',
-		en: 'Notes' },
-    PLAYER_SAVE: {
-		id: 'Simpan',
-		en: 'Save' },
-    PLAYER_READY: {
-		id: 'pemain siap',
-		en: 'players ready' },
-    PLAYER_STATS_SESSION: {
-		id: 'sesi',
-		en: 'sessions' },
-    PLAYER_STATS_SINCE: {
-		id: 'sejak',
-		en: 'since' },
-    BTN_NEXT: {
-		id: 'Lanjut',
-		en: 'Next' },
-    PLAYER_NOT_FOUND: {
-		id: 'Pemain tidak ditemukan.',
-		en: 'Player not found.' },
-    PLAYER_IN_USE: {
-		id: 'Pemain sudah memiliki riwayat, tidak bisa dihapus.',
-		en: 'Player has match history and cannot be deleted.' },
-    PLAYER_NAME_EXISTS: {
-		id: 'Nama pemain sudah ada.',
-		en: 'Player name already exists.' },
+    // --- Players ---
+    players           : 'Pemain',
+    add_player        : 'Tambah Pemain',
+    player_name       : 'Nama Pemain',
+    nickname          : 'Panggilan',
+    nickname_optional : 'Panggilan (opsional)',
+    no_players        : 'Belum ada pemain terdaftar',
+    add_first_player  : 'Tambah pemain pertama untuk mulai bermain',
+    edit_player       : 'Edit Pemain',
+    delete_player     : 'Hapus Pemain',
+    delete_confirm    : 'Yakin hapus pemain ini? Data match tetap tersimpan.',
+    search_player     : 'Cari pemain...',
 
-    // Game Mode
-	MODE_DUEL: {
-        id: 'Duel',
-        en: 'Duel' },
-    MODE_KING_OF_TABLE: {
-        id: 'Raja Meja ♛',
-        en: 'King of Table ♛' },
-    MODE_TEAM_BATTLE: {
-        id: 'Team Battle',
-        en: 'Team Battle' },
-    MODE_SINGAPORE: {
-        id: 'Singapore',
-        en: 'Singapore' },
-    MODE_CUSTOM: {
-        id: 'Kustom',
-        en: 'Custom' },
-    MODE_SELECT: {
-		id: 'Mode permainan',
-		en: 'Game mode' },
-    MODE_DUEL_DESC: {
-		id: '1 vs 1, head to head',
-		en: '1 vs 1, head to head' },
-    MODE_KING_DESC: {
-		id: 'Sistem antrian, pemenang tetap di meja',
-		en: 'Queue system, winner stays at table' }, 
-    MODE_SG_DESC: {
-		id: 'Multi-pemain, hasil berupa ranking',
-		en: 'Multi-player, ranked results' },
-    MODE_TEAM_DESC: {
-		id: 'Tim vs tim dengan rotasi otomatis',
-		en: 'Team vs team with automatic rotation' },
-	MODE_TOURN_DESC: {
-		id: 'Bracket eliminasi',
-		en: 'Elimination bracket' },
-    MODE_RR_DESC: {
-		id: 'Semua lawan semua',
-		en: 'Everyone vs everyone' },
-    MODE_CUSTOM_DESC: {
-		id: 'Atur sendiri format permainan',
-		en: 'Set your own game format' },
-    BTN_START: {
-		id: 'Mulai',
-		en: 'Start' },
+    // --- Setup Game ---
+    setup_game        : 'Atur Permainan',
+    select_players    : 'Pilih Pemain',
+    select_mode       : 'Pilih Mode',
+    selected_players  : 'Pemain Dipilih',
+    min_players_note  : 'Pilih minimal {n} pemain untuk mode ini',
+    start_game        : 'Mulai',
+    back              : 'Kembali',
 
-    TAB_CASUAL: {
-		id: 'Kasual',
-		en: 'Casual' },
-    TAB_TOURNAMENT: {
-		id: 'Turnamen',
-		en: 'Tournament' },
-    COMING_SOON: {
-		id: 'Segera Hadir',
-		en: 'Coming Soon' },
-    COMING_SOON_DESC: {
-		id: 'Sedang dalam pengembangan',
-		en: 'Currently under development' },
-    TEAM_CONFIG_TITLE: {
-		id: 'Team Battle — Konfigurasi',
-		en: 'Team Battle — Configuration' },
-    ROTATION_MODE_LABEL: {
-		id: 'Mode Rotasi',
-		en: 'Rotation Mode' },
-    ROTATION_FAIR: {
-		id: 'Rotasi Adil',
-		en: 'Fair Rotation' },
-    ROTATION_FAIR_DESC: {
-		id: 'Semua kombinasi partner merata',
-		en: 'All partner combinations distributed evenly' },
-    ROTATION_RANDOM: {
-		id: 'Acak',
-		en: 'Random' },
-    ROTATION_RANDOM_DESC: {
-		id: 'Rotasi acak setiap match',
-		en: 'Random rotation each match' },
-    ROTATION_MANUAL: {
-		id: 'Manual',
-		en: 'Manual' },
-    ROTATION_MANUAL_DESC: {
-		id: 'Atur sendiri tiap match',
-		en: 'Set teams manually each match' },
+    // --- Game Modes ---
+    mode_duel         : 'Duel',
+    mode_duel_desc    : '1 vs 1 — Bertanding satu lawan satu, siklus otomatis',
+    mode_king         : 'King of Table',
+    mode_king_desc    : 'Pemenang tetap di meja, yang kalah kembali ke antrean',
+    mode_team         : 'Team Battle',
+    mode_team_desc    : '2 vs 2 — Tim berganti setiap ronde secara otomatis',
+    mode_singapore    : 'Singapore',
+    mode_singapore_desc: '3 pemain sekaligus, pemenang mendapat poin',
 
-    // Match / Play
-    MATCH_NO: {
-		id: 'Match',
-		en: 'Match' },
-    ROUND: {
-		id: 'Ronde',
-		en: 'Round' },
-    QUEUE: {
-		id: 'Antrian',
-		en: 'Queue' },
-    BTN_END_GAME: {
-		id: 'Akhiri game', 
-		en: 'End game' },
-    BTN_BACK: {
-		id: 'Kembali',
-		en: 'Back' },
-    WINS: { id: 'menang', en: 'wins' },
+    // --- Play Screen ---
+    now_playing       : 'Sedang Main',
+    next_match        : 'Match Berikutnya',
+    queue             : 'Antrean',
+    resting           : 'Istirahat',
+    vs                : 'VS',
+    pick_winner       : 'Pilih Pemenang',
+    winner            : 'Pemenang',
+    end_game          : 'Akhiri Game',
+    shuffle_cycle     : 'Acak Ulang Siklus',
+    confirm_end_game  : 'Akhiri game saat ini? Kamu bisa mulai mode atau pemain baru setelahnya.',
+    confirm_shuffle   : 'Acak ulang urutan pertandingan? Mode dan pemain tetap sama, history match tetap tersimpan.',
+    match_count       : '{n} Match Dimainkan',
+    team_a            : 'Tim A',
+    team_b            : 'Tim B',
+    king_king         : '👑 King',
+    king_challenger   : 'Challenger',
+    king_queue        : 'Antrean',
 
-    // Statistik ringkas
-    STATS_SUMMARY: {
-		id: 'Ringkasan game',
-		en: 'Game summary' },
-    STATS_MODE: {
-		id: 'Mode',
-		en: 'Mode' },
-    STATS_TOTAL_MATCH: {
-		id: 'Total match',
-		en: 'Total matches' },
-    STATS_DURATION: {
-		id: 'Durasi',
-		en: 'Duration' },
-    STATS_KING: {
-		id: 'Raja',
-		en: 'King' },
-    STATS_STREAK: {
-		id: 'Streak terpanjang',
-		en: 'Longest streak' },
-    STATS_CHAMPION: {
-		id: 'Champion',
-		en: 'Champion' },
-    STATS_MVP: {
-		id: 'MVP',
-		en: 'MVP' },
-    BTN_CLOSE: {
-		id: 'Tutup',
-		en: 'Close' },
-    BTN_END_SESSION: {
-		id: 'Akhiri sesi',
-		en: 'End session' },
+    // --- ELO ---
+    elo_change        : 'Perubahan ELO',
+    elo_rating        : 'Rating ELO',
+    elo_label_1       : '🌱 Beginner',
+    elo_label_2       : '🔰 Novice',
+    elo_label_3       : '🥉 Intermediate',
+    elo_label_4       : '🥈 Advanced',
+    elo_label_5       : '🥇 Expert',
+    elo_label_6       : '💎 Professional',
+    elo_label_7       : '👑 World Class',
 
-    // History
-    HISTORY_BY_SESSION: {
-		id: 'Per sesi',
-		en: 'By session' },
-    HISTORY_BY_GAME: {
-		id: 'Per game',
-		en: 'By game' },
-    HISTORY_NO_DATA: {
-		id: 'Belum ada riwayat.',
-		en: 'No history yet.' },
+    // --- Stats & History ---
+    statistics        : 'Statistik',
+    history           : 'Riwayat',
+    leaderboard       : 'Papan Peringkat',
+    total_matches     : 'Total Match',
+    total_wins        : 'Menang',
+    total_losses      : 'Kalah',
+    win_rate          : 'Win Rate',
+    total_sessions    : 'Total Sesi',
+    peak_elo          : 'ELO Terbaik',
+    last_played       : 'Terakhir Main',
+    session_detail    : 'Detail Sesi',
+    session_number    : 'Sesi #{n}',
+    champion          : 'Champion',
+    no_history        : 'Belum ada riwayat sesi',
 
-    // Settings
-    SETTINGS_TITLE: {
-		id: 'Pengaturan',
-		en: 'Settings' },
-    SETTINGS_LANGUAGE: {
-		id: 'Bahasa',
-		en: 'Language' },
-    SETTINGS_THEME: {
-		id: 'Warna tema',
-		en: 'Theme color' },
-    SETTINGS_LOGOUT: {
-		id: 'Keluar',
-		en: 'Sign out' },
-    THEME_BLUE: {
-		id: 'Biru',
-		en: 'Blue' },
-    THEME_GREEN: {
-		id: 'Hijau',
-		en: 'Green' },
-    THEME_PURPLE: {
-		id: 'Ungu',
-		en: 'Purple' },
-    THEME_GOLD: {
-		id: 'Emas',
-		en: 'Gold' },
-    LANG_ID: {
-		id: 'Indonesia',
-		en: 'Indonesia' },
-    LANG_EN: {
-		id: 'English',
-		en: 'English' },
+    // --- Settings ---
+    settings          : 'Pengaturan',
+    language          : 'Bahasa',
+    theme             : 'Tema',
+    theme_dark        : 'Gelap',
+    theme_light       : 'Terang',
+    theme_green       : 'Hijau',
+    theme_purple      : 'Ungu',
+    theme_gold        : 'Emas',
+    save_settings     : 'Simpan',
+    settings_saved    : 'Pengaturan disimpan',
 
-    // Confirm & feedback
-    CONFIRM_LOGOUT: {
-		id: 'Yakin ingin keluar?',
-		en: 'Are you sure you want to sign out?' },
-    CONFIRM_END_SESSION: {
-		id: 'Yakin akhiri sesi?',
-		en: 'End session?' },
-    CONFIRM_DELETE: {
-		id: 'Yakin ingin menghapus?',
-		en: 'Are you sure you want to delete?' },
-    YES: {
-		id: 'Ya',
-		en: 'Yes' },
-    NO: {
-		id: 'Tidak',
-		en: 'No' },
-    CANCEL: {
-		id: 'Batal',
-		en: 'Cancel' },
-    CONFIRM: {
-		id: 'Konfirmasi',
-		en: 'Confirm' },
-    SUCCESS: {
-		id: 'Berhasil',
-		en: 'Success' },
-    ERROR: {
-		id: 'Gagal',
-		en: 'Error' },
-    SAVED: {
-		id: 'Data berhasil disimpan.',
-		en: 'Data saved successfully.' },
-    DELETED: {
-		id: 'Data berhasil dihapus.',
-		en: 'Data deleted successfully.' },
+    // --- Errors ---
+    err_INVALID_ACTION     : 'Aksi tidak dikenali',
+    err_MISSING_PARAMS     : 'Data tidak lengkap',
+    err_UNAUTHORIZED       : 'Sesi berakhir, silakan login kembali',
+    err_INVALID_CREDENTIALS: 'Nama atau kata sandi salah',
+    err_USER_NOT_FOUND     : 'Pengguna tidak ditemukan',
+    err_PLAYER_NOT_FOUND   : 'Pemain tidak ditemukan',
+    err_SESSION_NOT_FOUND  : 'Sesi tidak ditemukan',
+    err_SEGMENT_NOT_FOUND  : 'Game tidak ditemukan',
+    err_MATCH_NOT_FOUND    : 'Match tidak ditemukan',
+    err_NAME_REQUIRED      : 'Nama tidak boleh kosong',
+    err_NAME_DUPLICATE     : 'Nama sudah digunakan',
+    err_MIN_PLAYERS        : 'Jumlah pemain kurang dari minimum',
+    err_INVALID_MODE       : 'Mode permainan tidak valid',
+    err_INVALID_WINNER     : 'Pemenang tidak valid',
+    err_SESSION_FINISHED   : 'Sesi sudah berakhir',
+    err_SEGMENT_FINISHED   : 'Game sudah berakhir',
+    err_SERVER_ERROR       : 'Terjadi kesalahan server',
+    err_NETWORK            : 'Gagal terhubung ke server',
 
-    // Validasi
-    FIELD_REQUIRED: {
-		id: 'Field ini wajib diisi.',
-		en: 'This field is required.' },
-    MIN_PLAYERS: {
-		id: 'Pilih minimal 2 pemain.',
-		en: 'Select at least 2 players.' },
-    INSUFFICIENT_PLAYERS: {
-		id: 'Pemain tidak cukup untuk mode ini.',
-		en: 'Not enough players for this mode.' },
+    // --- General ---
+    save              : 'Simpan',
+    cancel            : 'Batal',
+    confirm           : 'Konfirmasi',
+    delete            : 'Hapus',
+    edit              : 'Edit',
+    close             : 'Tutup',
+    loading           : 'Memuat...',
+    success           : 'Berhasil',
+    error             : 'Gagal',
+    yes               : 'Ya',
+    no                : 'Tidak',
+    search            : 'Cari',
+    empty             : 'Kosong',
+    optional          : 'opsional'
+  },
 
-    PLAY_MATCH_LABEL: {
-        id: 'Match',
-        en: 'Match' },
-    PLAY_ROUND_LABEL: {
-        id: 'Ronde',
-        en: 'Round' },
-    PLAY_KING_BADGE: {
-        id: 'KING',
-        en: 'KING' },
-    PLAY_CHALLENGER_BADGE: {
-        id: 'PENANTANG',
-        en: 'CHALLENGER' },
-    PLAY_WIN_STREAK_LABEL: {
-        id: 'MENANG BERUNTUN',
-        en: 'WIN STREAK' },
-	PLAY_PICK_WINNER: {
-		id: 'Pilih Pemenang',
-		en: 'Pick Winner' },
-    PLAY_WIN_LABEL: {
-		id: 'menang',
-		en: 'wins' },
-    PLAY_NOW_PLAYING: {
-		id: 'Sedang Berlangsung',
-		en: 'Now Playing' },
-    PLAY_NEXT_MATCH: {
-		id: 'Match Berikutnya',
-		en: 'Next Match' },
-    PLAY_QUEUE_LABEL: {
-		id: 'Antrian',
-		en: 'Queue' },
-    PLAY_WAITING: {
-		id: 'Menunggu',
-		en: 'Waiting' },
-    PLAY_VS: {
-		id: 'VS',
-		en: 'VS' },
-    PLAY_WIN_TAP_HINT: {
-		id: 'Ketuk nama pemenang',
-		en: 'Tap winner name' },
-	PLAY_WINNER: {
-		id: 'PEMENANG',
-		en: 'WINNER' },
-    PLAY_HISTORY: {
-		id: 'Riwayat',
-		en: 'History' },
-    PLAY_INPUT_RANKING: {
-		id: 'Input Ranking',
-		en: 'Input Ranking' },
-    PLAY_RANKING_HINT: {
-		id: 'Atur urutan dari peringkat 1 (terbaik) ke bawah menggunakan tombol panah.',
-		en: 'Arrange players from rank 1 (best) downward using the arrow buttons.' },
-    PLAY_CONFIRM_RESULT: {
-		id: 'Konfirmasi Hasil',
-		en: 'Confirm Result' },
-    PLAY_GAME_SUMMARY: {
-		id: 'Ringkasan Game',
-		en: 'Game Summary' },
-    PLAY_CONTINUE: {
-		id: 'Lanjut Main',
-		en: 'Continue Playing' },
-    PLAY_END_SESSION: {
-		id: 'Akhiri Sesi',
-		en: 'End Session' },
-    PLAY_END_GAME: {
-		id: 'Akhiri Game',
-		en: 'End Game' },
-    PLAY_QUEUE_TITLE: {
-		id: 'Antrian Pemain',
-		en: 'Player Queue' },
-    PLAY_QUEUE: {
-		id: 'Antrian',
-		en: 'Queue' },
-    PLAY_QUEUE_EMPTY: {
-		id: 'Belum ada pemain dalam antrian.',
-		en: 'No players in queue yet.' },
-    PLAY_DONE: {
-		id: 'Selesai',
-		en: 'Done' },
-    PLAY_BRACKET_TITLE: {
-		id: 'Bagan Turnamen',
-		en: 'Tournament Bracket' },
-    PLAY_BRACKET: {
-		id: 'Bagan',
-		en: 'Bracket' },
-    PLAY_CLOSE: {
-		id: 'Tutup',
-		en: 'Close' },
-    PLAY_CONFIRM_END_GAME: {
-		id: 'Akhiri game ini?',
-		en: 'End this game?' },
-    PLAY_CONFIRM_BACK: {
-		id: 'Kembali ke pilih mode? Sesi game ini akan dibatalkan.',
-		en: 'Go back to mode selection? This game session will be cancelled.' },
-    PLAY_SINGAPORE_HINT: {
-		id: 'Ketuk "Input Ranking" setelah ronde selesai untuk mencatat hasil.',
-		en: 'Tap "Input Ranking" after the round ends to record results.' },
-	PLAY_TB_TAP_HINT: {
-    	id: 'Ketuk tim pemenang',
-    	en: 'Tap winning team' },
-	PLAY_TB_REST: {
-    	id: 'Istirahat',
-    	en: 'Resting' },
-    PLAY_TEAM_WIN: {
-		id: 'Tim',
-		en: 'Team' },
-	PLAY_TEAM_A: {
-        id: 'TIM A',
-        en: 'TEAM A' },
-    PLAY_TEAM_B: {
-        id: 'TIM B',
-        en: 'TEAM B' },
-    PLAY_TEAM_A_SHORT: {
-        id: 'A',
-        en: 'A' },
-    PLAY_TEAM_B_SHORT: {
-        id: 'B',
-        en: 'B' },
-    PLAY_NO_PLAYERS_IN_TEAM: {
-        id: 'Tidak ada pemain di tim ini',
-        en: 'No players in this team' },
-    PLAY_CONFIRM_WIN_TITLE: {
-		id: 'Konfirmasi Pemenang',
-		en: 'Confirm Winner' },
-	PLAY_STANDINGS: {
-        id: 'KLASEMEN',
-        en: 'STANDINGS' },
-    PLAY_WIN_COUNT_SUFFIX: {
-        id: 'W',
-        en: 'W' },
-    PLAY_TOURNAMENT_PROGRESS: {
-        id: 'PROGRESS TURNAMEN',
-        en: 'TOURNAMENT PROGRESS' },
-    PLAY_ADD_TO_QUEUE: {
-        id: 'TAMBAH KE ANTRIAN',
-        en: 'ADD TO QUEUE' },
-    PLAY_NO_BRACKET_DATA: {
-        id: 'Belum ada data bracket.',
-        en: 'No bracket data yet.' },
-    PLAY_NO_PLAYER_DATA: {
-        id: 'Data pemain tidak ditemukan. Kembali dan pilih pemain ulang.',
-        en: 'Player data not found. Go back and select players again.' },
-    PLAY_MATCH_FINISHED_SUFFIX: {
-        id: 'selesai',
-        en: 'finished' },
-    PLAY_SUMMARY_MODE: {
-		id: 'Mode',
-		en: 'Mode' },
-    PLAY_SUMMARY_TOTAL: {
-		id: 'Total Match',
-		en: 'Total Matches' },
-    PLAY_SUMMARY_TOP: {
-		id: 'Pemenang Terbanyak',
-		en: 'Top Winner' },
-    PLAY_SUMMARY_STREAK: {
-		id: 'Streak Terpanjang',
-		en: 'Longest Streak' },
-    PLAY_RETRY: {
-		id: 'Coba Lagi',
-		en: 'Try Again' },
+  en: {
+    // --- App ---
+    app_name          : 'CueHub',
+    app_tagline       : 'Billiard Session Manager',
 
-    // ── Keys tambahan v2 ──
-    TAP_TO_WIN:          { id: 'Tap untuk menang',         en: 'Tap to win' },
-    KING_HINT:           { id: 'Pemenang tetap di meja, yang kalah turun antrian', en: 'Winner stays, loser rotates out' },
-    SG_RANK_HINT:        { id: 'Susun urutan ranking (atas = juara)',  en: 'Drag to set ranking (top = 1st)' },
-    PLAY_ALL_DONE:       { id: 'Semua pertandingan selesai!',          en: 'All matches done!' },
-    BTN_SHOW_SUMMARY:    { id: 'Lihat Ringkasan',                      en: 'Show Summary' },
-    PLAY_CONFIRM_RANKING:{ id: 'Konfirmasi Ranking',                   en: 'Confirm Ranking' },
-    LOGOUT_CONFIRM:      { id: 'Yakin ingin keluar?',                  en: 'Are you sure you want to log out?' },
-    BACK_CONFIRM:        { id: 'Keluar dari sesi ini?',                en: 'Leave this session?' },
-    BACK_CONFIRM_MSG:    { id: 'Progres pertandingan berjalan tidak akan disimpan.', en: 'Progress of ongoing match will not be saved.' },
-    PLAYER_ADDED:        { id: 'Pemain ditambahkan',                   en: 'Player added' },
-    SESSION_NEW_TITLE:   { id: 'Sesi Baru',                           en: 'New Session' },
-    SESSION_NAME_PH:     { id: 'Nama sesi',                           en: 'Session name' },
-    SESSION_LOC_PH:      { id: 'Lokasi (opsional)',                   en: 'Location (optional)' },
-    STATUS_ONGOING:      { id: 'Berlangsung',  en: 'Ongoing' },
-    STATUS_FINISHED:     { id: 'Selesai',      en: 'Finished' },
-    STATUS_SCHEDULED:    { id: 'Terjadwal',    en: 'Scheduled' },
-    STATUS_CANCELLED:    { id: 'Dibatalkan',   en: 'Cancelled' },
-    EMPTY_SESSIONS:      { id: 'Belum ada sesi',     en: 'No sessions yet' },
-    EMPTY_PLAYERS:       { id: 'Belum ada pemain',   en: 'No players yet' },
-    EMPTY_STATS:         { id: 'Belum ada statistik', en: 'No stats yet' },
-    WIN_RATE:            { id: 'Win Rate',    en: 'Win Rate' },
-    MATCHES:             { id: 'Match',       en: 'Matches' },
-    GAMES:               { id: 'Game',        en: 'Games' },
-    PLAYERS:             { id: 'Pemain',      en: 'Players' },
-    PLAYER:              { id: 'Pemain',      en: 'Player' },
-    PLAYER_ADD_TITLE:    { id: 'Tambah Pemain', en: 'Add Player' },
-    PLAYER_EDIT_TITLE:   { id: 'Edit Pemain',   en: 'Edit Player' },
-    PLAYER_NAME_PH:      { id: 'Nama pemain',   en: 'Player name' },
-    BTN_NEXT_TEAM:       { id: 'Tim Berikutnya', en: 'Next Team' },
-    ADD:                 { id: 'Tambah',  en: 'Add' },
-    CREATE:              { id: 'Buat',    en: 'Create' },
-    EDIT:                { id: 'Edit',    en: 'Edit' },
-    DELETE:              { id: 'Hapus',   en: 'Delete' },
-    SAVE:                { id: 'Simpan',  en: 'Save' },
-    DELETE_CONFIRM:      { id: 'Hapus pemain ini?', en: 'Delete this player?' },
-    MODE_DUEL:           { id: 'Duel',          en: 'Duel' },
-    MODE_KING:           { id: 'King of Table', en: 'King of Table' },
-    MODE_TEAM:           { id: 'Team Battle',   en: 'Team Battle' },
-    MODE_SG:             { id: 'Singapore',     en: 'Singapore' },
-    END_SESSION_CONFIRM: { id: 'Akhiri sesi ini?', en: 'End this session?' },
-    PLAY_RESULT_SAVED:   { id: 'Hasil disimpan!',   en: 'Result saved!' },
-    BTN_END_GAME:        { id: 'Akhiri Game',     en: 'End Game' },
-    MODE_SELECT:         { id: 'Pilih Mode',      en: 'Select Mode' },
-    FILTER_ALL:          { id: 'Semua',  en: 'All' }
+    // --- Auth ---
+    login             : 'Sign In',
+    logout            : 'Sign Out',
+    register          : 'Register',
+    display_name      : 'Display Name',
+    password          : 'Password',
+    login_welcome     : 'Welcome back',
+    login_subtitle    : 'Sign in as facilitator to start a session',
+    register_title    : 'Create Account',
+    register_subtitle : 'Register a new facilitator account',
+    no_account        : "Don't have an account?",
+    have_account      : 'Already have an account?',
+
+    // --- Dashboard ---
+    dashboard         : 'Dashboard',
+    start_session     : 'Start Session',
+    active_session    : 'Active Session',
+    resume_session    : 'Resume Session',
+    end_session       : 'End Session',
+    no_active_session : 'No active session',
+    start_new         : 'Start a new session to play',
+
+    // --- Navigation ---
+    nav_home          : 'Home',
+    nav_players       : 'Players',
+    nav_history       : 'History',
+    nav_settings      : 'Settings',
+
+    // --- Players ---
+    players           : 'Players',
+    add_player        : 'Add Player',
+    player_name       : 'Player Name',
+    nickname          : 'Nickname',
+    nickname_optional : 'Nickname (optional)',
+    no_players        : 'No players registered yet',
+    add_first_player  : 'Add the first player to get started',
+    edit_player       : 'Edit Player',
+    delete_player     : 'Delete Player',
+    delete_confirm    : 'Delete this player? Match history will be kept.',
+    search_player     : 'Search players...',
+
+    // --- Setup Game ---
+    setup_game        : 'Game Setup',
+    select_players    : 'Select Players',
+    select_mode       : 'Select Mode',
+    selected_players  : 'Selected Players',
+    min_players_note  : 'Select at least {n} players for this mode',
+    start_game        : 'Start',
+    back              : 'Back',
+
+    // --- Game Modes ---
+    mode_duel         : 'Duel',
+    mode_duel_desc    : '1v1 — Head to head matches with auto rotation',
+    mode_king         : 'King of Table',
+    mode_king_desc    : 'Winner stays, loser goes back to queue',
+    mode_team         : 'Team Battle',
+    mode_team_desc    : '2v2 — Teams rotate automatically every round',
+    mode_singapore    : 'Singapore',
+    mode_singapore_desc: '3 players at once, winner takes the point',
+
+    // --- Play Screen ---
+    now_playing       : 'Now Playing',
+    next_match        : 'Next Match',
+    queue             : 'Queue',
+    resting           : 'Resting',
+    vs                : 'VS',
+    pick_winner       : 'Pick Winner',
+    winner            : 'Winner',
+    end_game          : 'End Game',
+    shuffle_cycle     : 'Shuffle Cycle',
+    confirm_end_game  : 'End current game? You can start a new mode or player set after.',
+    confirm_shuffle   : 'Reshuffle the match order? Mode and players stay the same, match history is kept.',
+    match_count       : '{n} Matches Played',
+    team_a            : 'Team A',
+    team_b            : 'Team B',
+    king_king         : '👑 King',
+    king_challenger   : 'Challenger',
+    king_queue        : 'Queue',
+
+    // --- ELO ---
+    elo_change        : 'ELO Change',
+    elo_rating        : 'ELO Rating',
+    elo_label_1       : '🌱 Beginner',
+    elo_label_2       : '🔰 Novice',
+    elo_label_3       : '🥉 Intermediate',
+    elo_label_4       : '🥈 Advanced',
+    elo_label_5       : '🥇 Expert',
+    elo_label_6       : '💎 Professional',
+    elo_label_7       : '👑 World Class',
+
+    // --- Stats & History ---
+    statistics        : 'Statistics',
+    history           : 'History',
+    leaderboard       : 'Leaderboard',
+    total_matches     : 'Total Matches',
+    total_wins        : 'Wins',
+    total_losses      : 'Losses',
+    win_rate          : 'Win Rate',
+    total_sessions    : 'Total Sessions',
+    peak_elo          : 'Peak ELO',
+    last_played       : 'Last Played',
+    session_detail    : 'Session Detail',
+    session_number    : 'Session #{n}',
+    champion          : 'Champion',
+    no_history        : 'No session history yet',
+
+    // --- Settings ---
+    settings          : 'Settings',
+    language          : 'Language',
+    theme             : 'Theme',
+    theme_dark        : 'Dark',
+    theme_light       : 'Light',
+    theme_green       : 'Green',
+    theme_purple      : 'Purple',
+    theme_gold        : 'Gold',
+    save_settings     : 'Save',
+    settings_saved    : 'Settings saved',
+
+    // --- Errors ---
+    err_INVALID_ACTION     : 'Unknown action',
+    err_MISSING_PARAMS     : 'Incomplete request data',
+    err_UNAUTHORIZED       : 'Session expired, please sign in again',
+    err_INVALID_CREDENTIALS: 'Incorrect name or password',
+    err_USER_NOT_FOUND     : 'User not found',
+    err_PLAYER_NOT_FOUND   : 'Player not found',
+    err_SESSION_NOT_FOUND  : 'Session not found',
+    err_SEGMENT_NOT_FOUND  : 'Game not found',
+    err_MATCH_NOT_FOUND    : 'Match not found',
+    err_NAME_REQUIRED      : 'Name is required',
+    err_NAME_DUPLICATE     : 'Name already in use',
+    err_MIN_PLAYERS        : 'Not enough players for this mode',
+    err_INVALID_MODE       : 'Invalid game mode',
+    err_INVALID_WINNER     : 'Invalid winner',
+    err_SESSION_FINISHED   : 'Session already ended',
+    err_SEGMENT_FINISHED   : 'Game already ended',
+    err_SERVER_ERROR       : 'Server error occurred',
+    err_NETWORK            : 'Failed to connect to server',
+
+    // --- General ---
+    save              : 'Save',
+    cancel            : 'Cancel',
+    confirm           : 'Confirm',
+    delete            : 'Delete',
+    edit              : 'Edit',
+    close             : 'Close',
+    loading           : 'Loading...',
+    success           : 'Success',
+    error             : 'Error',
+    yes               : 'Yes',
+    no                : 'No',
+    search            : 'Search',
+    empty             : 'Empty',
+    optional          : 'optional'
+  }
+};
+
+// --- Active language (default dari localStorage) ---
+var _currentLang = localStorage.getItem('ch_lang') || 'id';
+
+// Get string by key, dengan placeholder support: getLang('key', { n: 5 })
+function getLang(key, vars) {
+  var dict = LANG[_currentLang] || LANG['id'];
+  var str = dict[key] || key;
+  if (vars) {
+    for (var k in vars) {
+      str = str.replace('{' + k + '}', vars[k]);
+    }
+  }
+  return str;
 }
 
-function getLang(key) {
-	var lang = localStorage.getItem('ch_lang') || 'id';
-	if (STRINGS[key]) {
-		return STRINGS[key][lang] || STRINGS[key].id;
-	}
-	return key;
+// Set bahasa aktif
+function setLang(lang) {
+  if (!LANG[lang]) return;
+  _currentLang = lang;
+  localStorage.setItem('ch_lang', lang);
+  applyLang();
 }
 
+// Apply semua string ke DOM (elemen dengan data-lang attribute)
 function applyLang() {
-  document.querySelectorAll('[data-lang]').forEach(function (el) {
-    el.textContent = getLang(el.getAttribute('data-lang'));
-  });
-  document.querySelectorAll('[data-lang-placeholder]').forEach(function (el) {
+  var elements = document.querySelectorAll('[data-lang]');
+  for (var i = 0; i < elements.length; i++) {
+    var el = elements[i];
+    var key = el.getAttribute('data-lang');
+    el.textContent = getLang(key);
+  }
+  // Placeholder
+  var placeholders = document.querySelectorAll('[data-lang-placeholder]');
+  for (var i = 0; i < placeholders.length; i++) {
+    var el = placeholders[i];
     el.placeholder = getLang(el.getAttribute('data-lang-placeholder'));
-  });
+  }
+}
+
+// Ambil bahasa aktif
+function getCurrentLang() {
+  return _currentLang;
 }

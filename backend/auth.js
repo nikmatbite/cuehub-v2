@@ -1,109 +1,93 @@
-var AuthService = {
+// =============================================================
+// CueHub v3 — auth.gs
+// Login, logout, register, me
+// =============================================================
 
-  register: function (payload) {
-    requireFields(payload, ['email', 'password', 'display_name']);
+// Register fasilitator baru
+// params: { display_name, password }
+function authRegister(params, user) {
+  if (!requireFields(params, ['display_name', 'password'])) {
+    return fail(ERR.MISSING_PARAMS);
+  }
 
-    var userSheet   = getSheet('core', SHEET_USERS);
-    var configSheet = getSheet('core', SHEET_CONFIG);
+  return withLock(function() {
+    var sheet = getCoreSheet(SHEET.USERS);
+    var existing = sheetToObjects(sheet);
 
-    // cek email duplikat
-    var existing = findRowByField(userSheet, 'email', payload.email);
-    if (existing) throw new ApiError('EMAIL_ALREADY_EXISTS');
-
-    var now    = nowISOString();
-    var userId = generateUUID();
-
-    var newUser = {
-      user_id:       userId,
-      email:         payload.email,
-      password_hash: buildPasswordField(payload.password),
-      display_name:  payload.display_name,
-      status:        USER_STATUS.ACTIVE,
-      last_login:    '',
-      created_at:    now
-    };
-
-    var newConfig = {
-      user_id:          userId,
-      database_id:      '', // dikosongkan, developer isi manual setelah verifikasi
-      timezone:         payload.timezone        || 'Asia/Jakarta',
-      default_language: payload.default_language || 'id'
-    };
-
-    withLock(function () {
-      Logger.log("APPEND USERS");
-      appendRowObject(userSheet, newUser);
-      Logger.log("APPEND CONFIG");
-      appendRowObject(configSheet, newConfig);
-      Logger.log("APPEND SELESAI");
-    });
-
-    logAction(userId, 'REGISTER');
-
-    return {
-      user_id:      userId,
-      email:        newUser.email,
-      display_name: newUser.display_name,
-      status:       USER_STATUS.ACTIVE
-    };
-  },
-
-  login: function (payload) {
-    requireFields(payload, ['email', 'password']);
-
-    var userSheet = getSheet('core', SHEET_USERS);
-    var user      = findRowByField(userSheet, 'email', payload.email);
-
-    if (!user) throw new ApiError('INVALID_CREDENTIALS');
-    if (user.status !== USER_STATUS.ACTIVE) throw new ApiError('USER_INACTIVE');
-
-    var parts = String(user.password_hash).split('$');
-    if (parts.length !== 2) throw new ApiError('CORRUPT_PASSWORD');
-
-    var inputHash = hashPassword(payload.password, parts[0]);
-    if (inputHash !== parts[1]) throw new ApiError('INVALID_CREDENTIALS');
-
-    // cek database_id sudah diisi developer belum
-    var configSheet = getSheet('core', SHEET_CONFIG);
-    var config      = findRowByField(configSheet, 'user_id', user.user_id);
-
-    if (!config) throw new ApiError('CONFIG_NOT_FOUND');
-    if (!config.database_id || config.database_id === '') {
-      throw new ApiError('ACCOUNT_PENDING');
+    // Cek nama duplikat
+    var nameLower = params.display_name.trim().toLowerCase();
+    for (var i = 0; i < existing.length; i++) {
+      if (existing[i].display_name.toLowerCase() === nameLower) {
+        return fail(ERR.NAME_DUPLICATE);
+      }
     }
 
-    withLock(function () {
-      updateRowObject(userSheet, user._rowIndex, { last_login: nowISOString() });
+    var userId = generateUUID();
+    var passwordHash = hashPassword(params.password);
+    var timestamp = now();
+
+    appendRow(sheet, {
+      user_id      : userId,
+      display_name : params.display_name.trim(),
+      password_hash: passwordHash,
+      token        : '',
+      status       : USER_STATUS.ACTIVE,
+      last_login   : '',
+      created_at   : timestamp
     });
 
-    logAction(user.user_id, 'LOGIN');
+    logAction(userId, 'auth.register', params.display_name);
+    return ok({ message: 'register_ok' });
+  });
+}
 
-    return {
-      user_id:          user.user_id,
-      email:            user.email,
-      display_name:     user.display_name,
-      database_id:      config.database_id,
-      timezone:         config.timezone,
-      default_language: config.default_language
-    };
+// Login fasilitator
+// params: { display_name, password }
+function authLogin(params, user) {
+  if (!requireFields(params, ['display_name', 'password'])) {
+    return fail(ERR.MISSING_PARAMS);
   }
 
-};
+  return withLock(function() {
+    var sheet = getCoreSheet(SHEET.USERS);
+    var found = findRowByField(sheet, 'display_name', params.display_name.trim());
 
-// ---- Logger (dipanggil dari semua modul) ----
-function logAction(userId, action, description) {
-  try {
-    var sheet = getSheet('core', SHEET_LOGS);
-    appendRowObject(sheet, {
-      log_id:      generateUUID(),
-      date_time:   nowISOString(),
-      user_id:     userId      || '',
-      action:      action      || '',
-      description: description || '',
-      ip:          '',
-      device:      ''
+    if (!found) return fail(ERR.INVALID_CREDENTIALS);
+    if (found.status !== USER_STATUS.ACTIVE) return fail(ERR.UNAUTHORIZED);
+    if (!verifyPassword(params.password, found.password_hash)) {
+      return fail(ERR.INVALID_CREDENTIALS);
+    }
+
+    var token = generateToken(found.user_id);
+    updateRowById(sheet, 'user_id', found.user_id, {
+      token     : token,
+      last_login: now()
     });
-  } catch (err) {
-    console.error('[CUEHUB LOG ERROR] ' + err.code);
-  }
+
+    logAction(found.user_id, 'auth.login', '');
+
+    return ok({
+      token       : token,
+      user_id     : found.user_id,
+      display_name: found.display_name
+    });
+  });
+}
+
+// Logout — hapus token
+function authLogout(params, user) {
+  return withLock(function() {
+    var sheet = getCoreSheet(SHEET.USERS);
+    updateRowById(sheet, 'user_id', user.user_id, { token: '' });
+    logAction(user.user_id, 'auth.logout', '');
+    return ok({ message: 'logout_ok' });
+  });
+}
+
+// Cek token masih valid + ambil data user
+function authMe(params, user) {
+  return ok({
+    user_id     : user.user_id,
+    display_name: user.display_name
+  });
 }

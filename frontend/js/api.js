@@ -1,77 +1,81 @@
-var GAS_URL = 'https://script.google.com/macros/s/AKfycbznatQccniA57JnT1LzUCcex5k8zMiuHpaELKiMNH4lPBjhpbbM2jCCOkz17TsWac5n/exec';
+// =============================================================
+// CueHub v3 — api.js
+// Semua komunikasi ke GAS backend lewat sini
+// Tidak ada fetch() di file lain
+// =============================================================
 
-function gasRequest(action, payload) {
-  var body = JSON.stringify({ action: action, payload: payload || {} });
-  return fetch(GAS_URL, {
-    method: 'POST',
-    body: body,
-    headers: { 'Content-Type': 'text/plain' }
-  })
-  .then(function(res) {
-    if (!res.ok) throw new Error('NETWORK_ERROR');
-    return res.json();
-  })
-  .then(function(json) {
-    if (!json.success) {
-      var code = (json.error && json.error.code) ? json.error.code : 'INTERNAL_ERROR';
-      throw new Error(code);
+var API_URL = 'https://script.google.com/macros/s/AKfycbzn7FoP2HoOUkJuYfcC3fF4IaT9Ov07yHmsZWe-0dqtOx01lqRHTGeia8KcD34dOQT8/exec'; // Isi setelah GAS di-deploy sebagai Web App
+
+// --- Core request ---
+async function apiRequest(action, params) {
+  if (!API_URL) {
+    console.error('API_URL belum diisi di api.js');
+    return { success: false, error: { code: 'ERR_NO_URL' } };
+  }
+
+  var token = store.get('token');
+  var body = { action: action, params: params || {} };
+  if (token) body.token = token;
+
+  try {
+    var res = await fetch(API_URL, {
+      method : 'POST',
+      headers: { 'Content-Type': 'text/plain' }, // GAS butuh text/plain bukan JSON
+      body   : JSON.stringify(body)
+    });
+    var data = await res.json();
+
+    // Token expired → auto logout
+    if (!data.success && data.error && data.error.code === 'UNAUTHORIZED') {
+      store.clear();
+      router.go('login');
     }
-    return json.data;
-  });
+
+    return data;
+  } catch (e) {
+    return { success: false, error: { code: 'NETWORK' } };
+  }
 }
 
-function withUser(payload) {
-  var user = getSession();
-  if (user && user.user_id) payload._user_id = user.user_id;
-  return payload;
-}
-
-var Api = {
+// --- Auth ---
+var api = {
   auth: {
-    login:    function(email, pw)  { return gasRequest('auth.login', { email: email, password: pw }); },
-    register: function(data)       { return gasRequest('auth.register', data); }
+    login    : (p) => apiRequest('auth.login',    p),
+    logout   : ()  => apiRequest('auth.logout',   {}),
+    register : (p) => apiRequest('auth.register', p),
+    me       : ()  => apiRequest('auth.me',       {})
   },
+
   player: {
-    getAll:  function()     { return gasRequest('player.getAll',  withUser({})); },
-    getById: function(id)   { return gasRequest('player.getById', withUser({ player_id: id })); },
-    create:  function(data) { return gasRequest('player.create',  withUser(data)); },
-    update:  function(data) { return gasRequest('player.update',  withUser(data)); },
-    delete:  function(id)   { return gasRequest('player.delete',  withUser({ player_id: id })); }
+    getAll  : ()  => apiRequest('player.getAll',  {}),
+    getById : (p) => apiRequest('player.getById', p),
+    create  : (p) => apiRequest('player.create',  p),
+    update  : (p) => apiRequest('player.update',  p),
+    delete  : (p) => apiRequest('player.delete',  p)
   },
+
   session: {
-    create:       function(data)         { return gasRequest('session.create',       withUser(data)); },
-    getAll:       function(status)       { return gasRequest('session.getAll',       withUser(status ? { status: status } : {})); },
-    getById:      function(id)           { return gasRequest('session.getById',      withUser({ session_id: id })); },
-    update:       function(data)         { return gasRequest('session.update',       withUser(data)); },
-    updateStatus: function(id, status)   { return gasRequest('session.updateStatus', withUser({ session_id: id, status: status })); },
-    addPlayer:    function(sid, pid)     { return gasRequest('session.addPlayer',    withUser({ session_id: sid, player_id: pid })); },
-    removePlayer: function(sid, pid)     { return gasRequest('session.removePlayer', withUser({ session_id: sid, player_id: pid })); },
-    getPlayers:   function(id)           { return gasRequest('session.getPlayers',   withUser({ session_id: id })); }
+    create  : (p) => apiRequest('session.create',  p),
+    getAll  : (p) => apiRequest('session.getAll',  p || {}),
+    getById : (p) => apiRequest('session.getById', p),
+    finish  : (p) => apiRequest('session.finish',  p)
   },
-  game: {
-    getAll:  function()   { return gasRequest('game.getAll',  withUser({})); },
-    getById: function(id) { return gasRequest('game.getById', withUser({ game_id: id })); }
+
+  segment: {
+    start     : (p) => apiRequest('segment.start',      p),
+    finish    : (p) => apiRequest('segment.finish',     p),
+    shuffle   : (p) => apiRequest('segment.shuffle',    p),
+    getActive : (p) => apiRequest('segment.getActive',  p)
   },
-  sessionGame: {
-    create:       function(data)       { return gasRequest('sessionGame.create',       withUser(data)); },
-    getAll:       function(sid)        { return gasRequest('sessionGame.getAll',       withUser({ session_id: sid })); },
-    getById:      function(id)         { return gasRequest('sessionGame.getById',      withUser({ session_game_id: id })); },
-    update:       function(data)       { return gasRequest('sessionGame.update',       withUser(data)); },
-    updateStatus: function(id, status) { return gasRequest('sessionGame.updateStatus', withUser({ session_game_id: id, status: status })); }
-  },
+
   match: {
-    create:           function(data)         { return gasRequest('match.create',           withUser(data)); },
-    getAll:           function(sgId)         { return gasRequest('match.getAll',           withUser({ session_game_id: sgId })); },
-    getById:          function(id)           { return gasRequest('match.getById',          withUser({ match_id: id })); },
-    start:            function(id)           { return gasRequest('match.start',            withUser({ match_id: id })); },
-    finish:           function(data)         { return gasRequest('match.finish',           withUser(data)); },
-    cancel:           function(id)           { return gasRequest('match.cancel',           withUser({ match_id: id })); },
-    generateRotation: function(sgId, pids)   { return gasRequest('match.generateRotation', withUser({ session_game_id: sgId, player_ids: pids })); }
+    submitWinner : (p) => apiRequest('match.submitWinner',  p),
+    getBySegment : (p) => apiRequest('match.getBySegment',  p)
   },
-  statistics: {
-    compute:      function(sid) { return gasRequest('statistics.compute',      withUser({ session_id: sid })); },
-    getSession:   function(sid) { return gasRequest('statistics.getSession',   withUser({ session_id: sid })); },
-    getPlayer:    function(pid) { return gasRequest('statistics.getPlayer',    withUser({ player_id: pid })); },
-    getAllPlayers: function()    { return gasRequest('statistics.getAllPlayers', withUser({})); }
+
+  stats: {
+    getPlayer    : (p) => apiRequest('stats.getPlayer',     p),
+    getAllPlayers : ()  => apiRequest('stats.getAllPlayers', {}),
+    getSession   : (p) => apiRequest('stats.getSession',    p)
   }
 };
