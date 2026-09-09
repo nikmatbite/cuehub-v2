@@ -7,7 +7,8 @@
 var router = (function() {
   var _routes = {};
   var _currentRoute = null;
-  var _beforeEach = null; // guard function
+  var _beforeEach = null;
+  var _navigating = false;
 
   return {
     // Daftarkan route: router.on('login', PageLogin.render)
@@ -22,19 +23,22 @@ var router = (function() {
 
     // Navigasi ke route
     go: function(name, params) {
+      _navigating = true;
       window.location.hash = '#/' + name;
+      _navigating = false;
       _navigate(name, params);
     },
 
-    // Replace route tanpa tambah history
     replace: function(name, params) {
+      _navigating = true;
       window.location.replace('#/' + name);
+      _navigating = false;
       _navigate(name, params);
     },
 
-    // Init — panggil sekali saat app load
     init: function() {
       window.addEventListener('hashchange', function() {
+        if (_navigating) return;
         var name = _getHashRoute();
         _navigate(name);
       });
@@ -59,8 +63,12 @@ var router = (function() {
     if (_beforeEach) {
       var allowed = _beforeEach(name);
       if (allowed !== true && allowed !== undefined) {
-        _navigate(allowed);
+        _navigating = true;
         window.location.replace('#/' + allowed);
+        _navigating = false;
+        _currentRoute = allowed;
+        var redirectHandler = _routes[allowed];
+        if (redirectHandler) redirectHandler();
         return;
       }
     }
