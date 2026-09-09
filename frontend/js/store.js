@@ -6,9 +6,19 @@
 
 var store = (function() {
   var PREFIX = 'ch3_';
-
-  // In-memory cache untuk state yang sering dibaca
   var _cache = {};
+
+  (function _init() {
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k && k.startsWith(PREFIX)) {
+          var shortKey = k.replace(PREFIX, '');
+          try { _cache[shortKey] = JSON.parse(localStorage.getItem(k)); } catch(e) {}
+        }
+      }
+    } catch(e) {}
+  })();
 
   return {
     // Simpan key-value (otomatis JSON.stringify untuk object/array)
