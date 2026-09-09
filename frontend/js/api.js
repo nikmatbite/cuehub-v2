@@ -20,19 +20,22 @@ async function apiRequest(action, params) {
   try {
     var res = await fetch(API_URL, {
       method : 'POST',
-      headers: { 'Content-Type': 'text/plain' }, // GAS butuh text/plain bukan JSON
+      headers: { 'Content-Type': 'text/plain' },
       body   : JSON.stringify(body)
     });
     var data = await res.json();
 
-    // Token expired → auto logout
-    if (!data.success && data.error && data.error.code === 'UNAUTHORIZED') {
+    // 🔧 FIX: Hanya logout kalau BENAR-BENAR UNAUTHORIZED
+    if (data.success === false && data.error && data.error.code === 'UNAUTHORIZED') {
+      console.warn('Token tidak valid, logout...');
       store.clear();
       router.go('login');
+      return data;  // ← Return juga
     }
 
     return data;
   } catch (e) {
+    console.error('API Request Error:', e);
     return { success: false, error: { code: 'NETWORK' } };
   }
 }
