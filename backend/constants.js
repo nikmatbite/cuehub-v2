@@ -6,7 +6,7 @@
 
 // --- Database Spreadsheet ID ---
 // Isi dengan ID Google Spreadsheet database setelah installDatabase() dijalankan
-var DB_SPREADSHEET_ID = '';
+var DB_SPREADSHEET_ID = '1RdMOC6iOSx7k1Ge5m2gx3h3zpCUcaNbqTWVQSXOTADc';
 
 // --- Sheet Names: Core (bound ke GAS) ---
 var SHEET = {
