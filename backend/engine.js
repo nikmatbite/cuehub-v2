@@ -362,13 +362,17 @@ function calculateEloSingapore(playerIds, winnerId, playerElos, playerGames) {
   var result = {};
   playerIds.forEach(function(pid) { result[pid] = parseFloat(playerElos[pid]) || ELO.DEFAULT; });
 
+  // Buat copy terpisah supaya elosBefore di caller tidak termutasi
+  var workingElos = {};
+  playerIds.forEach(function(pid) { workingElos[pid] = result[pid]; });
+
   playerIds.forEach(function(pid) {
     if (pid === winnerId) return;
-    var delta = calculateElo1v1(winnerId, pid, playerElos, playerGames);
+    var delta = calculateElo1v1(winnerId, pid, workingElos, playerGames);
     result[winnerId] = delta[winnerId];
     result[pid] = delta[pid];
-    // Update playerElos untuk kalkulasi berikutnya
-    playerElos[winnerId] = result[winnerId];
+    // Update workingElos (bukan playerElos asli) untuk iterasi berikutnya
+    workingElos[winnerId] = result[winnerId];
   });
   return result;
 }
