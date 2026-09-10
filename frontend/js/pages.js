@@ -783,7 +783,7 @@ var PagePlay = {
               return `<button class="ch-winner-btn"
                 style="display:flex;align-items:center;gap:10px;padding:10px 16px;width:100%;box-sizing:border-box"
                 onclick="PagePlay.pickWinnerEl(this)"
-                data-winner='["' + id + '"]'
+                data-winner='["${id}"]'
                 data-players='${JSON.stringify(players)}'>
                 ${ui.avatar(self._pName(id), 'sm')}
                 <span style="font-weight:600">${self._pName(id)}</span>
@@ -797,6 +797,7 @@ var PagePlay = {
   },
 
   _renderNext: function(state) {
+    if (mode === 'king_of_table') return '';
     var self = this;
     if (!state || !state.next) return '';
     var mode = state.mode;
@@ -839,9 +840,17 @@ var PagePlay = {
 
   _renderQueue: function(state) {
     var self = this;
-    if (!state || !state.queue || state.queue.length === 0) return '';
+    if (!state) return '';
 
-    return state.queue.map(function(id, i) {
+    // King of table: gabungkan next + queue supaya semua yang menunggu terlihat
+    var queue = state.queue || [];
+    if (state.mode === 'king_of_table' && state.next && state.next.length > 0) {
+      queue = state.next.concat(queue);
+    }
+
+    if (queue.length === 0) return '';
+
+    return queue.map(function(id, i) {
       return `<div class="ch-queue-item">
         <div class="ch-queue-badge">${i + 1}</div>
         ${ui.avatar(self._pName(id), 'sm')}
@@ -884,11 +893,13 @@ var PagePlay = {
   _renderHistory: function() {
     if (!this._matchHistory || this._matchHistory.length === 0) return '';
     var rows = this._matchHistory.map(function(m, i) {
-      var label = m.team ? m.team + ' (' + m.winners.join(', ') + ')' : m.winners.join(' & ');
-      return `<div class="flex items-center gap-2" style="padding:6px 0;border-bottom:1px solid var(--ch-border);font-size:0.82rem">
-        <span style="color:var(--ch-text-muted);min-width:18px">${i + 1}.</span>
-        <span>🏆</span>
-        <span style="font-weight:600">${label}</span>
+      var vsLabel = m.players ? m.players.join(' vs ') : m.winners.join(' & ');
+      var winLabel = m.team
+        ? m.team + ' (' + m.winners.join(', ') + ')'
+        : m.winners.join(' & ');
+      return `<div style="padding:8px 0;border-bottom:1px solid var(--ch-border);font-size:0.82rem">
+        <div style="color:var(--ch-text-muted);font-size:0.72rem;margin-bottom:2px">${i + 1}. ${vsLabel}</div>
+        <div style="font-weight:600">🏆 ${winLabel}</div>
       </div>`;
     }).join('');
     return `
@@ -922,7 +933,10 @@ var PagePlay = {
       var wNames = winnerIds.map(function(id) {
         return this._players[id] ? this._players[id].player_name : id.substring(0,6);
       }, this);
-      this._matchHistory.unshift({ winners: wNames });
+      var allNames = playerIds.map(function(id) {
+        return this._players[id] ? this._players[id].player_name : id.substring(0,6);
+      }, this);
+      this._matchHistory.unshift({ winners: wNames, players: allNames });
       if (this._matchHistory.length > 10) this._matchHistory.pop();
       this._renderPlay();
     } else {
@@ -953,7 +967,10 @@ var PagePlay = {
       var wNames = winnerIds.map(function(id) {
         return this._players[id] ? this._players[id].player_name : id.substring(0,6);
       }, this);
-      this._matchHistory.unshift({ winners: wNames, team: tName });
+      var allNames = playerIds.map(function(id) {
+        return this._players[id] ? this._players[id].player_name : id.substring(0,6);
+      }, this);
+      this._matchHistory.unshift({ winners: wNames, team: tName, players: allNames });
       if (this._matchHistory.length > 10) this._matchHistory.pop();
       this._renderPlay();
     } else {
