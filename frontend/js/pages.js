@@ -909,8 +909,8 @@ var PagePlay = {
         // player_ids dari backend adalah JSON string, perlu di-parse
         var rawIds = self._segment.player_ids || '[]';
         var currentPlayerIds = typeof rawIds === 'string' ? JSON.parse(rawIds) : rawIds;
+        history.replaceState(null, '', '#/setup');
         PageSetup.renderFromPlay(currentPlayerIds);
-        router.replace('setup');
       } else {
         ui.toast.apiError(res.error && res.error.code);
       }
