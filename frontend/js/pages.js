@@ -961,19 +961,6 @@ var PagePlay = {
     }
   },
 
-  pickWinnerTeamEl: function(el) {
-    var team    = el.getAttribute('data-team');
-    var teamA   = JSON.parse(el.getAttribute('data-ta'));
-    var teamB   = JSON.parse(el.getAttribute('data-tb'));
-    this.pickWinnerTeam(team, teamA, teamB);
-  },
-
-  pickWinnerEl: function(el) {
-    var winnerIds = JSON.parse(el.getAttribute('data-winner'));
-    var playerIds = JSON.parse(el.getAttribute('data-players'));
-    this.pickWinner(winnerIds, playerIds);
-  },
-
   doEndGame: function() {
     var self = this;
     ui.confirm(getLang('confirm_end_game'), async function() {
