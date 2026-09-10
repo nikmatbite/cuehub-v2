@@ -936,7 +936,7 @@ var PagePlay = {
       var winLabel = m.team
         ? m.team + ' (' + m.winners.join(', ') + ')'
         : m.winners.join(' & ');
-      var editBtn = m.match_id
+      var editBtn = (i === 0 && m.match_id)
         ? `<button class="ch-btn ch-btn-surface ch-btn-sm"
             style="font-size:0.68rem;padding:2px 8px;margin-left:8px"
             onclick="PagePlay.openEditWinner(${i})"
