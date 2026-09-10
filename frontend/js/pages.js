@@ -1143,6 +1143,10 @@ var PagePlay = {
       var wName  = winner ? winner.player_name : '';
       var wEloChange = Math.round((after[winnerIds[0]] || 0) - (before[winnerIds[0]] || 0));
       var sign = wEloChange >= 0 ? '+' : '';
+      console.log('elo_before:', before);
+      console.log('elo_after:', after);
+      console.log('winnerId:', winnerIds[0]);
+      console.log('change calc:', (after[winnerIds[0]] || 0) - (before[winnerIds[0]] || 0));
       ui.toast.success('🏆 ' + wName + '  ' + sign + wEloChange + ' ELO');
       var wNames = winnerIds.map(function(id) {
         return this._players[id] ? this._players[id].player_name : id.substring(0,6);
