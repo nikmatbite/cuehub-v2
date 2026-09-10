@@ -1137,11 +1137,11 @@ var PagePlay = {
       this._matchCount++;
       this._state = res.data.next_state;
       // Tampilkan ELO change
-      var before = res.data.elo_before;
-      var after  = res.data.elo_after;
+      var before = typeof res.data.elo_before === 'string' ? JSON.parse(res.data.elo_before) : res.data.elo_before;
+      var after  = typeof res.data.elo_after  === 'string' ? JSON.parse(res.data.elo_after)  : res.data.elo_after;
       var winner = this._players[winnerIds[0]];
       var wName  = winner ? winner.player_name : '';
-      var wEloChange = after[winnerIds[0]] - before[winnerIds[0]];
+      var wEloChange = Math.round((after[winnerIds[0]] || 0) - (before[winnerIds[0]] || 0));
       var sign = wEloChange >= 0 ? '+' : '';
       ui.toast.success('🏆 ' + wName + '  ' + sign + wEloChange + ' ELO');
       var wNames = winnerIds.map(function(id) {
@@ -1179,8 +1179,16 @@ var PagePlay = {
     if (res.success) {
       this._matchCount++;
       this._state = res.data.next_state;
-      var tName = getLang('team_' + winnerTeam.toLowerCase());
-      ui.toast.success('🏆 ' + tName + ' ' + getLang('winner_label'));
+      var before = typeof res.data.elo_before === 'string' ? JSON.parse(res.data.elo_before) : res.data.elo_before;
+      var after  = typeof res.data.elo_after  === 'string' ? JSON.parse(res.data.elo_after)  : res.data.elo_after;
+      var tName  = getLang('team_' + winnerTeam.toLowerCase());
+      var eloLines = winnerIds.map(function(id) {
+        var name   = this._players[id] ? this._players[id].player_name : id.substring(0,6);
+        var change = Math.round((after[id] || 0) - (before[id] || 0));
+        var sign   = change >= 0 ? '+' : '';
+        return name + ' ' + sign + change;
+      }, this).join(', ');
+      ui.toast.success('🏆 ' + tName + ' | ' + eloLines + ' ELO');
       var wNames = winnerIds.map(function(id) {
         return this._players[id] ? this._players[id].player_name : id.substring(0,6);
       }, this);
