@@ -73,7 +73,8 @@ var api = {
 
   match: {
     submitWinner : (p) => apiRequest('match.submitWinner',  p),
-    getBySegment : (p) => apiRequest('match.getBySegment',  p)
+    getBySegment : (p) => apiRequest('match.getBySegment',  p),
+    editWinner   : (p) => apiRequest('match.editWinner',    p)
   },
 
   stats: {

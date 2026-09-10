@@ -108,6 +108,12 @@ var LANG = {
     // --- Play ---
     recent_matches    : 'History Game',
     winner_label      : 'menang!',
+    confirm_winner_msg  : '🏆 {name} menang di game ini?',
+    confirm_winner_team_msg: '🏆 {team} ({names}) menang di game ini?',
+    edit_winner         : 'Edit Pemenang',
+    edit_winner_title   : 'Koreksi Pemenang Game #{n}',
+    edit_winner_note    : 'ELO akan dihitung ulang',
+    edit_winner_success : 'Pemenang berhasil dikoreksi',
 
     // --- Stats & History ---
     statistics        : 'Statistik',
@@ -277,6 +283,12 @@ var LANG = {
     // --- Play ---
     recent_matches    : 'Game History',
     winner_label      : 'wins!',
+    confirm_winner_msg  : '🏆 {name} wins this game?',
+    confirm_winner_team_msg: '🏆 {team} ({names}) wins this game?',
+    edit_winner         : 'Edit Winner',
+    edit_winner_title   : 'Correct Winner for Game #{n}',
+    edit_winner_note    : 'ELO will be recalculated',
+    edit_winner_success : 'Winner corrected successfully',
 
     // --- Stats & History ---
     statistics        : 'Statistics',

@@ -617,10 +617,18 @@ var PagePlay = {
       var self = this;
       this._matchHistory = matchRes.data.slice(-10).reverse().map(function(m) {
         var winnerIds = typeof m.winner_ids === 'string' ? JSON.parse(m.winner_ids) : m.winner_ids;
+        var playerIds = typeof m.player_ids === 'string' ? JSON.parse(m.player_ids) : m.player_ids;
         var winnerNames = winnerIds.map(function(id) {
           return self._players[id] ? self._players[id].player_name : id.substring(0,6);
         });
-        return { winners: winnerNames, mode: m.game_mode || '' };
+        return {
+          match_id  : m.match_id,
+          match_order: parseInt(m.match_order) || 0,
+          winners   : winnerNames,
+          winner_ids: winnerIds,
+          player_ids: playerIds,
+          mode      : m.game_mode || ''
+        };
       });
     } else {
       this._matchHistory = [];
@@ -721,11 +729,11 @@ var PagePlay = {
 
           <div class="ch-section-label" style="margin-top:0;text-align:center" data-lang="pick_winner"></div>
           <div class="flex gap-3">
-            <button class="ch-winner-btn" onclick="PagePlay.pickWinner(['${p1}'], ['${p1}','${p2}'])">
+            <button class="ch-winner-btn" onclick="PagePlay.confirmPickWinner(['${p1}'], ['${p1}','${p2}'])">
               ${ui.avatar(self._pName(p1), 'sm')}
               <div style="font-weight:600;font-size:0.9rem;margin-top:6px">${self._pName(p1)}</div>
             </button>
-            <button class="ch-winner-btn" onclick="PagePlay.pickWinner(['${p2}'], ['${p1}','${p2}'])">
+            <button class="ch-winner-btn" onclick="PagePlay.confirmPickWinner(['${p2}'], ['${p1}','${p2}'])">
               ${ui.avatar(self._pName(p2), 'sm')}
               <div style="font-weight:600;font-size:0.9rem;margin-top:6px">${self._pName(p2)}</div>
             </button>
@@ -876,30 +884,66 @@ var PagePlay = {
       </div>`;
   },
 
+  // Konfirmasi sebelum submit pemenang (duel / king_of_table)
+  confirmPickWinner: function(winnerIds, playerIds) {
+    var self = this;
+    var wNames = winnerIds.map(function(id) {
+      return self._players[id] ? self._players[id].player_name : id.substring(0,6);
+    }).join(' & ');
+    var msg = getLang('confirm_winner_msg').replace('{name}', wNames);
+    ui.confirm(msg, function() {
+      self.pickWinner(winnerIds, playerIds);
+    });
+  },
+
   // Helper untuk Singapore/Team: baca data dari data-attribute agar tidak ada quote conflict di onclick
   pickWinnerEl: function(el) {
     var winnerIds = JSON.parse(el.getAttribute('data-winner'));
     var playerIds = JSON.parse(el.getAttribute('data-players'));
-    this.pickWinner(winnerIds, playerIds);
+    var self = this;
+    var wNames = winnerIds.map(function(id) {
+      return self._players[id] ? self._players[id].player_name : id.substring(0,6);
+    }).join(' & ');
+    var msg = getLang('confirm_winner_msg').replace('{name}', wNames);
+    ui.confirm(msg, function() {
+      self.pickWinner(winnerIds, playerIds);
+    });
   },
 
   pickWinnerTeamEl: function(el) {
     var team  = el.getAttribute('data-team');
     var teamA = JSON.parse(el.getAttribute('data-ta'));
     var teamB = JSON.parse(el.getAttribute('data-tb'));
-    this.pickWinnerTeam(team, teamA, teamB);
+    var self = this;
+    var winnerIds = team === 'A' ? teamA : teamB;
+    var tName = getLang('team_' + team.toLowerCase());
+    var wNames = winnerIds.map(function(id) {
+      return self._players[id] ? self._players[id].player_name : id.substring(0,6);
+    }).join(', ');
+    var msg = getLang('confirm_winner_team_msg').replace('{team}', tName).replace('{names}', wNames);
+    ui.confirm(msg, function() {
+      self.pickWinnerTeam(team, teamA, teamB);
+    });
   },
 
   _renderHistory: function() {
     if (!this._matchHistory || this._matchHistory.length === 0) return '';
     var rows = this._matchHistory.map(function(m, i) {
-      var vsLabel = m.players ? m.players.join(' vs ') : m.winners.join(' & ');
+      var vsLabel = m.players ? m.players.join(' vs ') : (m.player_ids ? m.player_ids.join(' vs ') : m.winners.join(' vs '));
       var winLabel = m.team
         ? m.team + ' (' + m.winners.join(', ') + ')'
         : m.winners.join(' & ');
+      var matchIdx = i;
+      var editBtn = m.match_id
+        ? `<button class="ch-btn ch-btn-surface ch-btn-sm" style="font-size:0.68rem;padding:2px 8px;margin-left:8px"
+            onclick="PagePlay.openEditWinner(${matchIdx})" title="${getLang('edit_winner')}">✏️</button>`
+        : '';
       return `<div style="padding:8px 0;border-bottom:1px solid var(--ch-border);font-size:0.82rem">
-        <div style="color:var(--ch-text-muted);font-size:0.72rem;margin-bottom:2px">${i + 1}. ${vsLabel}</div>
-        <div style="font-weight:600">🏆 ${winLabel}</div>
+        <div style="color:var(--ch-text-muted);font-size:0.72rem;margin-bottom:2px">#${m.match_order || (i+1)}. ${vsLabel}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="font-weight:600">🏆 ${winLabel}</div>
+          ${editBtn}
+        </div>
       </div>`;
     }).join('');
     return `
@@ -907,6 +951,116 @@ var PagePlay = {
         <div class="ch-section-label" data-lang="recent_matches"></div>
         <div>${rows}</div>
       </div>`;
+  },
+
+  openEditWinner: function(matchIdx) {
+    var m = this._matchHistory[matchIdx];
+    if (!m || !m.match_id) return;
+    var self = this;
+
+    // Buat opsi tombol untuk setiap pemain yang terlibat
+    var playerIds = m.player_ids || [];
+    var options = playerIds.map(function(id) {
+      var name = self._players[id] ? self._players[id].player_name : id.substring(0,6);
+      var isCurrentWinner = m.winner_ids && m.winner_ids.indexOf(id) !== -1;
+      return `<button class="ch-btn ${isCurrentWinner ? 'ch-btn-primary' : 'ch-btn-surface'}"
+        style="width:100%;margin-bottom:8px;display:flex;align-items:center;gap:10px;padding:10px 14px"
+        onclick="PagePlay._submitEditWinner('${m.match_id}', ['${id}'], ${JSON.stringify(playerIds)}, ${matchIdx})">
+        ${ui.avatar(name, 'sm')}
+        <span style="font-weight:600">${name}</span>
+        ${isCurrentWinner ? '<span style="margin-left:auto;font-size:0.8rem">✓ sekarang</span>' : ''}
+      </button>`;
+    }).join('');
+
+    var title = getLang('edit_winner_title').replace('{n}', m.match_order || (matchIdx + 1));
+    var note  = getLang('edit_winner_note');
+
+    // Tampilkan modal konfirmasi dengan custom content
+    var modal = document.getElementById('confirm-modal');
+    if (!modal) return;
+    var msgEl = modal.querySelector('.confirm-message');
+    if (msgEl) {
+      msgEl.innerHTML = `<div style="font-weight:700;margin-bottom:12px">${title}</div>
+        <div style="font-size:0.8rem;color:var(--ch-text-muted);margin-bottom:12px">⚠️ ${note}</div>
+        <div>${options}</div>`;
+    }
+
+    // Sembunyikan tombol ya/batal bawaan — pilihan lewat tombol pemain
+    var btnYes = modal.querySelector('.btn-confirm-yes');
+    var btnNo  = modal.querySelector('.btn-confirm-no');
+    if (btnYes) btnYes.style.display = 'none';
+    if (btnNo)  { btnNo.textContent = getLang('cancel'); btnNo.style.display = ''; }
+
+    var bsModal = new bootstrap.Modal(modal);
+    var newNo = btnNo.cloneNode(true);
+    btnNo.parentNode.replaceChild(newNo, btnNo);
+    newNo.addEventListener('click', function() { bsModal.hide(); });
+
+    // Restore tombol setelah modal ditutup
+    modal.addEventListener('hidden.bs.modal', function onHide() {
+      if (btnYes) btnYes.style.display = '';
+      modal.removeEventListener('hidden.bs.modal', onHide);
+    }, { once: true });
+
+    this._editModal = bsModal;
+    bsModal.show();
+  },
+
+  _submitEditWinner: async function(matchId, newWinnerIds, playerIds, matchIdx) {
+    if (this._editModal) this._editModal.hide();
+    ui.loading.show();
+    var res = await api.match.editWinner({
+      match_id  : matchId,
+      winner_ids: newWinnerIds,
+      player_ids: playerIds,
+      segment_id: this._segment.segment_id
+    });
+    ui.loading.hide();
+    if (res.success) {
+      ui.toast.success(getLang('edit_winner_success'));
+      // Reload full data supaya ELO & history sinkron
+      await this._loadData();
+    } else {
+      ui.toast.apiError(res.error && res.error.code);
+    }
+  },
+
+  _loadData: async function() {
+    var sessionId = store.getSessionId();
+    if (!sessionId) { router.go('dashboard'); return; }
+    var segRes = await api.segment.getActive({ session_id: sessionId });
+    if (!segRes.success || !segRes.data.segment) { router.go('setup'); return; }
+    this._segment = segRes.data.segment;
+    this._state   = segRes.data.state;
+    var playerRes = await api.player.getAll();
+    if (playerRes.success) {
+      var map = {};
+      playerRes.data.forEach(function(p) { map[p.player_id] = p; });
+      this._players = map;
+    }
+    var matchRes = await api.match.getBySegment({ segment_id: this._segment.segment_id });
+    this._matchCount = matchRes.success ? matchRes.data.length : 0;
+    if (matchRes.success && matchRes.data.length > 0) {
+      var self = this;
+      this._matchHistory = matchRes.data.slice(-10).reverse().map(function(m) {
+        var winnerIds = typeof m.winner_ids === 'string' ? JSON.parse(m.winner_ids) : m.winner_ids;
+        var playerIds = typeof m.player_ids === 'string' ? JSON.parse(m.player_ids) : m.player_ids;
+        var winnerNames = winnerIds.map(function(id) {
+          return self._players[id] ? self._players[id].player_name : id.substring(0,6);
+        });
+        return {
+          match_id   : m.match_id,
+          match_order: parseInt(m.match_order) || 0,
+          winners    : winnerNames,
+          winner_ids : winnerIds,
+          player_ids : playerIds,
+          mode       : m.game_mode || ''
+        };
+      });
+    } else {
+      this._matchHistory = [];
+    }
+    this._renderPlay();
   },
 
   pickWinner: async function(winnerIds, playerIds) {
@@ -933,10 +1087,13 @@ var PagePlay = {
       var wNames = winnerIds.map(function(id) {
         return this._players[id] ? this._players[id].player_name : id.substring(0,6);
       }, this);
-      var allNames = playerIds.map(function(id) {
-        return this._players[id] ? this._players[id].player_name : id.substring(0,6);
-      }, this);
-      this._matchHistory.unshift({ winners: wNames, players: allNames });
+      this._matchHistory.unshift({
+        match_id   : res.data.match_id,
+        match_order: this._matchCount,
+        winners    : wNames,
+        winner_ids : winnerIds,
+        player_ids : playerIds
+      });
       if (this._matchHistory.length > 10) this._matchHistory.pop();
       this._renderPlay();
     } else {
@@ -967,10 +1124,14 @@ var PagePlay = {
       var wNames = winnerIds.map(function(id) {
         return this._players[id] ? this._players[id].player_name : id.substring(0,6);
       }, this);
-      var allNames = playerIds.map(function(id) {
-        return this._players[id] ? this._players[id].player_name : id.substring(0,6);
-      }, this);
-      this._matchHistory.unshift({ winners: wNames, team: tName, players: allNames });
+      this._matchHistory.unshift({
+        match_id   : res.data.match_id,
+        match_order: this._matchCount,
+        winners    : wNames,
+        winner_ids : winnerIds,
+        player_ids : playerIds,
+        team       : tName
+      });
       if (this._matchHistory.length > 10) this._matchHistory.pop();
       this._renderPlay();
     } else {

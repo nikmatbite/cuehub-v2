@@ -34,6 +34,7 @@ var ROUTES = {
   // Matches
   'match.submitWinner': matchSubmitWinner,
   'match.getBySegment': matchGetBySegment,
+  'match.editWinner'  : matchEditWinner,
 
   // Statistics
   'stats.getPlayer'  : statsGetPlayer,

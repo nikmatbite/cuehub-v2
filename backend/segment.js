@@ -256,6 +256,79 @@ function matchGetBySegment(params, user) {
   return ok(filtered);
 }
 
+function matchEditWinner(params, user) {
+  if (!requireFields(params, ['match_id', 'winner_ids', 'player_ids', 'segment_id'])) {
+    return fail(ERR.MISSING_PARAMS);
+  }
+
+  return withLock(function() {
+    var matchSheet = getDbSheet(DB_SHEET.MATCH_MASTER);
+    var match = findRowByField(matchSheet, 'match_id', params.match_id);
+    if (!match) return fail(ERR.MATCH_NOT_FOUND);
+
+    var segSheet = getDbSheet(DB_SHEET.SESSION_SEGMENTS);
+    var segment = findRowByField(segSheet, 'segment_id', params.segment_id);
+    if (!segment) return fail(ERR.SEGMENT_NOT_FOUND);
+
+    var mode = segment.game_mode;
+    var newWinnerIds = params.winner_ids;
+    var matchPlayerIds = params.player_ids;
+
+    // Validasi winner baru ada di match player list
+    for (var i = 0; i < newWinnerIds.length; i++) {
+      if (matchPlayerIds.indexOf(newWinnerIds[i]) === -1) {
+        return fail(ERR.INVALID_WINNER);
+      }
+    }
+
+    var masterSheet = getDbSheet(DB_SHEET.PLAYER_MASTER);
+    var elosBefore   = parseJson(match.elo_before);
+    var elosOldAfter = parseJson(match.elo_after);
+
+    // Balikkan ELO lama: kembalikan ke kondisi sebelum match
+    var gamesBefore = {};
+    for (var pid in elosOldAfter) {
+      var pm = findRowByField(masterSheet, 'player_id', pid);
+      if (!pm) continue;
+      var currentGames = parseInt(pm.total_games) || 0;
+      var restoredElo  = elosBefore[pid] !== undefined ? elosBefore[pid] : (parseFloat(pm.elo) || ELO.DEFAULT);
+      gamesBefore[pid] = Math.max(0, currentGames - 1);
+      updateRowById(masterSheet, 'player_id', pid, {
+        elo        : restoredElo,
+        total_games: gamesBefore[pid]
+      });
+    }
+
+    // Hitung ELO baru dengan pemenang yang benar
+    var elosNewAfter = _computeElo(mode, matchPlayerIds, newWinnerIds, elosBefore, gamesBefore, params);
+
+    // Terapkan ELO baru
+    for (var pid in elosNewAfter) {
+      var pm2 = findRowByField(masterSheet, 'player_id', pid);
+      if (!pm2) continue;
+      var g = parseInt(pm2.total_games) || 0;
+      updateRowById(masterSheet, 'player_id', pid, {
+        elo        : elosNewAfter[pid],
+        total_games: g + 1
+      });
+    }
+
+    // Update match record
+    updateRowById(matchSheet, 'match_id', params.match_id, {
+      winner_ids: JSON.stringify(newWinnerIds),
+      elo_after : JSON.stringify(elosNewAfter)
+    });
+
+    logAction(user.user_id, 'match.editWinner', 'Match ' + params.match_id + ' | New winner: ' + newWinnerIds.join(','));
+
+    return ok({
+      match_id  : params.match_id,
+      elo_before: elosBefore,
+      elo_after : elosNewAfter
+    });
+  });
+}
+
 // =============================================================
 // Helper: Build state yang dikirim ke frontend
 // State mendeskripsikan: now playing, next, queue
