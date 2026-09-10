@@ -68,6 +68,8 @@ function installDatabaseSheets() {
     'match_id', 'segment_id', 'match_order',
     'player_ids',   // JSON array: semua player dalam match ini
     'winner_ids',   // JSON array: pemenang (1 untuk duel/king, bisa lebih untuk singapore)
+    'team_a',       // JSON array: anggota Tim A (team battle only)
+    'team_b',       // JSON array: anggota Tim B (team battle only)
     'elo_before',   // JSON object: { player_id: elo_value }
     'elo_after',    // JSON object: { player_id: elo_value }
     'played_at'

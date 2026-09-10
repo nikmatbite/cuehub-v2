@@ -199,6 +199,8 @@ function matchSubmitWinner(params, user) {
       match_order: matchOrder,
       player_ids : JSON.stringify(matchPlayerIds),
       winner_ids : JSON.stringify(winnerIds),
+      team_a     : params.team_a ? JSON.stringify(params.team_a) : '',
+      team_b     : params.team_b ? JSON.stringify(params.team_b) : '',
       elo_before : JSON.stringify(elosBefore),
       elo_after  : JSON.stringify(elosAfter),
       played_at  : now()
@@ -314,10 +316,13 @@ function matchEditWinner(params, user) {
     }
 
     // Update match record
-    updateRowById(matchSheet, 'match_id', params.match_id, {
+    var updateData = {
       winner_ids: JSON.stringify(newWinnerIds),
       elo_after : JSON.stringify(elosNewAfter)
-    });
+    };
+    if (params.team_a) updateData.team_a = JSON.stringify(params.team_a);
+    if (params.team_b) updateData.team_b = JSON.stringify(params.team_b);
+    updateRowById(matchSheet, 'match_id', params.match_id, updateData);
 
     logAction(user.user_id, 'match.editWinner', 'Match ' + params.match_id + ' | New winner: ' + newWinnerIds.join(','));
 

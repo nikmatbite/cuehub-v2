@@ -621,13 +621,17 @@ var PagePlay = {
         var winnerNames = winnerIds.map(function(id) {
           return self._players[id] ? self._players[id].player_name : id.substring(0,6);
         });
+        var teamA = m.team_a ? (typeof m.team_a === 'string' ? JSON.parse(m.team_a) : m.team_a) : null;
+        var teamB = m.team_b ? (typeof m.team_b === 'string' ? JSON.parse(m.team_b) : m.team_b) : null;
         return {
-          match_id  : m.match_id,
+          match_id   : m.match_id,
           match_order: parseInt(m.match_order) || 0,
-          winners   : winnerNames,
-          winner_ids: winnerIds,
-          player_ids: playerIds,
-          mode      : m.game_mode || ''
+          winners    : winnerNames,
+          winner_ids : winnerIds,
+          player_ids : playerIds,
+          team_a     : teamA,
+          team_b     : teamB,
+          mode       : m.game_mode || ''
         };
       });
     } else {
@@ -933,9 +937,15 @@ var PagePlay = {
       var vsLabel = m.player_ids
         ? m.player_ids.map(function(id) { return self._players[id] ? self._players[id].player_name : id.substring(0,6); }).join(' vs ')
         : m.winners.join(' & ');
-      var winLabel = m.team
-        ? m.team + ' (' + m.winners.join(', ') + ')'
-        : m.winners.join(' & ');
+      var winLabel = '';
+      if (m.team_a && m.team_b && m.winner_ids) {
+        // Tentukan label tim mana yang menang
+        var aWon = m.winner_ids.every(function(id) { return m.team_a.indexOf(id) !== -1; });
+        var teamLabel = aWon ? getLang('team_a') : getLang('team_b');
+        winLabel = teamLabel + ' (' + m.winners.join(' & ') + ')';
+      } else {
+        winLabel = m.winners.join(' & ');
+      }
       var editBtn = (i === 0 && m.match_id)
         ? `<button class="ch-btn ch-btn-surface ch-btn-sm"
             style="font-size:0.68rem;padding:2px 8px;margin-left:8px"
@@ -962,25 +972,54 @@ var PagePlay = {
     if (!m || !m.match_id) return;
     var self = this;
 
-    // Simpan pending edit ke property supaya tidak perlu embed JSON di onclick HTML
     this._pendingEdit = {
-      matchId   : m.match_id,
-      playerIds : m.player_ids || [],
-      matchIdx  : matchIdx
+      matchId  : m.match_id,
+      playerIds: m.player_ids || [],
+      matchIdx : matchIdx,
+      teamA    : m.team_a || null,
+      teamB    : m.team_b || null
     };
 
     var playerIds = m.player_ids || [];
-    var options = playerIds.map(function(id) {
-      var name = self._players[id] ? self._players[id].player_name : id.substring(0,6);
-      var isCurrent = m.winner_ids && m.winner_ids.indexOf(id) !== -1;
-      return `<button class="ch-btn ${isCurrent ? 'ch-btn-primary' : 'ch-btn-surface'}"
-        style="width:100%;margin-bottom:8px;display:flex;align-items:center;gap:10px;padding:10px 14px"
-        onclick="PagePlay._submitEditWinner('${id}')">
-        ${ui.avatar(name, 'sm')}
-        <span style="font-weight:600">${name}</span>
-        ${isCurrent ? '<span style="margin-left:auto;font-size:0.8rem">✓ sekarang</span>' : ''}
-      </button>`;
-    }).join('');
+    var isTeam = !!(m.team_a && m.team_b);
+    var options = '';
+
+    if (isTeam) {
+      // Team battle: tampilkan opsi per tim
+      var teams = [
+        { ids: m.team_a, label: getLang('team_a') },
+        { ids: m.team_b, label: getLang('team_b') }
+      ];
+      options = teams.map(function(t) {
+        var names = t.ids.map(function(id) {
+          return self._players[id] ? self._players[id].player_name : id.substring(0,6);
+        }).join(' & ');
+        var isCurrent = m.winner_ids && t.ids.every(function(id) {
+          return m.winner_ids.indexOf(id) !== -1;
+        });
+        var key = t.ids.join(',');
+        return `<button class="ch-btn ${isCurrent ? 'ch-btn-primary' : 'ch-btn-surface'}"
+          style="width:100%;margin-bottom:8px;display:flex;align-items:center;gap:10px;padding:10px 14px"
+          onclick="PagePlay._submitEditWinner('${key}')">
+          <span style="font-weight:700;font-size:0.8rem;color:var(--ch-accent)">${t.label}</span>
+          <span style="font-weight:600">${names}</span>
+          ${isCurrent ? '<span style="margin-left:auto;font-size:0.8rem">✓ sekarang</span>' : ''}
+        </button>`;
+      }).join('');
+    } else {
+      // Mode lain: per individu
+      options = playerIds.map(function(id) {
+        var name = self._players[id] ? self._players[id].player_name : id.substring(0,6);
+        var isCurrent = m.winner_ids && m.winner_ids.indexOf(id) !== -1;
+        return `<button class="ch-btn ${isCurrent ? 'ch-btn-primary' : 'ch-btn-surface'}"
+          style="width:100%;margin-bottom:8px;display:flex;align-items:center;gap:10px;padding:10px 14px"
+          onclick="PagePlay._submitEditWinner('${id}')">
+          ${ui.avatar(name, 'sm')}
+          <span style="font-weight:600">${name}</span>
+          ${isCurrent ? '<span style="margin-left:auto;font-size:0.8rem">✓ sekarang</span>' : ''}
+        </button>`;
+      }).join('');
+    }
 
     var title = getLang('edit_winner_title').replace('{n}', m.match_order || (matchIdx + 1));
     var note  = getLang('edit_winner_note');
@@ -1013,18 +1052,25 @@ var PagePlay = {
     bsModal.show();
   },
 
-  _submitEditWinner: async function(newWinnerId) {
+  _submitEditWinner: async function(winnerKey) {
     if (this._editModal) this._editModal.hide();
     var pending = this._pendingEdit;
     if (!pending) return;
 
+    // winnerKey bisa "id1,id2" (team) atau "id" (individu)
+    var newWinnerIds = winnerKey.split(',');
+
     ui.loading.show();
-    var res = await api.match.editWinner({
+    var payload = {
       match_id  : pending.matchId,
-      winner_ids: [newWinnerId],
+      winner_ids: newWinnerIds,
       player_ids: pending.playerIds,
       segment_id: this._segment.segment_id
-    });
+    };
+    if (pending.teamA) payload.team_a = pending.teamA;
+    if (pending.teamB) payload.team_b = pending.teamB;
+
+    var res = await api.match.editWinner(payload);
     ui.loading.hide();
 
     if (res.success) {
@@ -1058,12 +1104,16 @@ var PagePlay = {
         var winnerNames = winnerIds.map(function(id) {
           return self._players[id] ? self._players[id].player_name : id.substring(0,6);
         });
+        var teamA = m.team_a ? (typeof m.team_a === 'string' ? JSON.parse(m.team_a) : m.team_a) : null;
+        var teamB = m.team_b ? (typeof m.team_b === 'string' ? JSON.parse(m.team_b) : m.team_b) : null;
         return {
           match_id   : m.match_id,
           match_order: parseInt(m.match_order) || 0,
           winners    : winnerNames,
           winner_ids : winnerIds,
           player_ids : playerIds,
+          team_a     : teamA,
+          team_b     : teamB,
           mode       : m.game_mode || ''
         };
       });
@@ -1118,9 +1168,9 @@ var PagePlay = {
 
     ui.loading.show();
     var res = await api.match.submitWinner({
-      segment_id: segId,
-      winner_ids: winnerIds,
+      segment_id: this._segment.segment_id,
       player_ids: playerIds,
+      winner_ids: winnerIds,
       team_a    : teamA,
       team_b    : teamB
     });
@@ -1140,6 +1190,8 @@ var PagePlay = {
         winners    : wNames,
         winner_ids : winnerIds,
         player_ids : playerIds,
+        team_a     : teamA,
+        team_b     : teamB,
         team       : tName
       });
       if (this._matchHistory.length > 10) this._matchHistory.pop();
