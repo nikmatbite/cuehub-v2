@@ -928,15 +928,19 @@ var PagePlay = {
 
   _renderHistory: function() {
     if (!this._matchHistory || this._matchHistory.length === 0) return '';
+    var self = this;
     var rows = this._matchHistory.map(function(m, i) {
-      var vsLabel = m.players ? m.players.join(' vs ') : (m.player_ids ? m.player_ids.join(' vs ') : m.winners.join(' vs '));
+      var vsLabel = m.player_ids
+        ? m.player_ids.map(function(id) { return self._players[id] ? self._players[id].player_name : id.substring(0,6); }).join(' vs ')
+        : m.winners.join(' & ');
       var winLabel = m.team
         ? m.team + ' (' + m.winners.join(', ') + ')'
         : m.winners.join(' & ');
-      var matchIdx = i;
       var editBtn = m.match_id
-        ? `<button class="ch-btn ch-btn-surface ch-btn-sm" style="font-size:0.68rem;padding:2px 8px;margin-left:8px"
-            onclick="PagePlay.openEditWinner(${matchIdx})" title="${getLang('edit_winner')}">✏️</button>`
+        ? `<button class="ch-btn ch-btn-surface ch-btn-sm"
+            style="font-size:0.68rem;padding:2px 8px;margin-left:8px"
+            onclick="PagePlay.openEditWinner(${i})"
+            title="${getLang('edit_winner')}">✏️</button>`
         : '';
       return `<div style="padding:8px 0;border-bottom:1px solid var(--ch-border);font-size:0.82rem">
         <div style="color:var(--ch-text-muted);font-size:0.72rem;margin-bottom:2px">#${m.match_order || (i+1)}. ${vsLabel}</div>
@@ -958,24 +962,29 @@ var PagePlay = {
     if (!m || !m.match_id) return;
     var self = this;
 
-    // Buat opsi tombol untuk setiap pemain yang terlibat
+    // Simpan pending edit ke property supaya tidak perlu embed JSON di onclick HTML
+    this._pendingEdit = {
+      matchId   : m.match_id,
+      playerIds : m.player_ids || [],
+      matchIdx  : matchIdx
+    };
+
     var playerIds = m.player_ids || [];
     var options = playerIds.map(function(id) {
       var name = self._players[id] ? self._players[id].player_name : id.substring(0,6);
-      var isCurrentWinner = m.winner_ids && m.winner_ids.indexOf(id) !== -1;
-      return `<button class="ch-btn ${isCurrentWinner ? 'ch-btn-primary' : 'ch-btn-surface'}"
+      var isCurrent = m.winner_ids && m.winner_ids.indexOf(id) !== -1;
+      return `<button class="ch-btn ${isCurrent ? 'ch-btn-primary' : 'ch-btn-surface'}"
         style="width:100%;margin-bottom:8px;display:flex;align-items:center;gap:10px;padding:10px 14px"
-        onclick="PagePlay._submitEditWinner('${m.match_id}', ['${id}'], ${JSON.stringify(playerIds)}, ${matchIdx})">
+        onclick="PagePlay._submitEditWinner('${id}')">
         ${ui.avatar(name, 'sm')}
         <span style="font-weight:600">${name}</span>
-        ${isCurrentWinner ? '<span style="margin-left:auto;font-size:0.8rem">✓ sekarang</span>' : ''}
+        ${isCurrent ? '<span style="margin-left:auto;font-size:0.8rem">✓ sekarang</span>' : ''}
       </button>`;
     }).join('');
 
     var title = getLang('edit_winner_title').replace('{n}', m.match_order || (matchIdx + 1));
     var note  = getLang('edit_winner_note');
 
-    // Tampilkan modal konfirmasi dengan custom content
     var modal = document.getElementById('confirm-modal');
     if (!modal) return;
     var msgEl = modal.querySelector('.confirm-message');
@@ -985,18 +994,16 @@ var PagePlay = {
         <div>${options}</div>`;
     }
 
-    // Sembunyikan tombol ya/batal bawaan — pilihan lewat tombol pemain
     var btnYes = modal.querySelector('.btn-confirm-yes');
     var btnNo  = modal.querySelector('.btn-confirm-no');
     if (btnYes) btnYes.style.display = 'none';
-    if (btnNo)  { btnNo.textContent = getLang('cancel'); btnNo.style.display = ''; }
+    if (btnNo)  { btnNo.textContent = getLang('cancel'); }
 
     var bsModal = new bootstrap.Modal(modal);
     var newNo = btnNo.cloneNode(true);
     btnNo.parentNode.replaceChild(newNo, btnNo);
     newNo.addEventListener('click', function() { bsModal.hide(); });
 
-    // Restore tombol setelah modal ditutup
     modal.addEventListener('hidden.bs.modal', function onHide() {
       if (btnYes) btnYes.style.display = '';
       modal.removeEventListener('hidden.bs.modal', onHide);
@@ -1006,19 +1013,22 @@ var PagePlay = {
     bsModal.show();
   },
 
-  _submitEditWinner: async function(matchId, newWinnerIds, playerIds, matchIdx) {
+  _submitEditWinner: async function(newWinnerId) {
     if (this._editModal) this._editModal.hide();
+    var pending = this._pendingEdit;
+    if (!pending) return;
+
     ui.loading.show();
     var res = await api.match.editWinner({
-      match_id  : matchId,
-      winner_ids: newWinnerIds,
-      player_ids: playerIds,
+      match_id  : pending.matchId,
+      winner_ids: [newWinnerId],
+      player_ids: pending.playerIds,
       segment_id: this._segment.segment_id
     });
     ui.loading.hide();
+
     if (res.success) {
       ui.toast.success(getLang('edit_winner_success'));
-      // Reload full data supaya ELO & history sinkron
       await this._loadData();
     } else {
       ui.toast.apiError(res.error && res.error.code);
