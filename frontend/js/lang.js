@@ -105,6 +105,10 @@ var LANG = {
     elo_label_6       : '💎 Professional',
     elo_label_7       : '👑 World Class',
 
+    // --- Play ---
+    recent_matches    : 'History Game',
+    winner_label      : 'menang!',
+
     // --- Stats & History ---
     statistics        : 'Statistik',
     history           : 'Riwayat',
@@ -269,6 +273,10 @@ var LANG = {
     elo_label_5       : '🥇 Expert',
     elo_label_6       : '💎 Professional',
     elo_label_7       : '👑 World Class',
+    
+    // --- Play ---
+    recent_matches    : 'Game History',
+    winner_label      : 'wins!',
 
     // --- Stats & History ---
     statistics        : 'Statistics',

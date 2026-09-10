@@ -613,6 +613,18 @@ var PagePlay = {
     // Hitung match count
     var matchRes = await api.match.getBySegment({ segment_id: this._segment.segment_id });
     this._matchCount = matchRes.success ? matchRes.data.length : 0;
+    if (matchRes.success && matchRes.data.length > 0) {
+      var self = this;
+      this._matchHistory = matchRes.data.slice(-10).reverse().map(function(m) {
+        var winnerIds = typeof m.winner_ids === 'string' ? JSON.parse(m.winner_ids) : m.winner_ids;
+        var winnerNames = winnerIds.map(function(id) {
+          return self._players[id] ? self._players[id].player_name : id.substring(0,6);
+        });
+        return { winners: winnerNames, mode: m.game_mode || '' };
+      });
+    } else {
+      this._matchHistory = [];
+    }
 
     this._renderPlay();
   },
@@ -667,7 +679,10 @@ var PagePlay = {
 
         <!-- Resting for team/singapore -->
         ${this._renderResting(state)}
-      </div>`;
+
+          <!-- Match History -->
+          ${this._renderHistory()}
+        </div>`;
 
     ui.render(html);
     applyLang();
@@ -736,10 +751,14 @@ var PagePlay = {
           </div>
           <div class="ch-section-label" style="margin-top:0;text-align:center" data-lang="pick_winner"></div>
           <div class="flex gap-3">
-            <button class="ch-winner-btn" data-team="A" data-ta='${JSON.stringify(tA)}' data-tb='${JSON.stringify(tB)}' onclick="PagePlay.pickWinnerTeamEl(this)">
+            <button class="ch-winner-btn"
+              onclick="PagePlay.pickWinnerTeamEl(this)"
+              data-team="A" data-ta='${JSON.stringify(tA)}' data-tb='${JSON.stringify(tB)}'>
               <div style="font-weight:700" data-lang="team_a"></div>
             </button>
-            <button class="ch-winner-btn" data-team="B" data-ta='${JSON.stringify(tA)}' data-tb='${JSON.stringify(tB)}' onclick="PagePlay.pickWinnerTeamEl(this)">
+            <button class="ch-winner-btn"
+              onclick="PagePlay.pickWinnerTeamEl(this)"
+              data-team="B" data-ta='${JSON.stringify(tA)}' data-tb='${JSON.stringify(tB)}'>
               <div style="font-weight:700" data-lang="team_b"></div>
             </button>
           </div>
@@ -749,20 +768,23 @@ var PagePlay = {
     if (mode === 'singapore') {
       var players = state.playing;
       return `
-        <div class="ch-match-card playing">
-          <div class="flex justify-between mb-4 gap-2">
+        <div class="ch-match-card playing" style="overflow:hidden">
+          <div class="flex justify-around mb-4">
             ${players.map(function(id) {
-              return `<div class="ch-player-slot" style="flex:1">
+              return `<div class="ch-player-slot" style="flex:1;text-align:center">
                 ${ui.avatar(self._pName(id), 'md')}
-                <div class="player-name" style="font-size:0.82rem">${self._pName(id)}</div>
+                <div class="player-name" style="font-size:0.82rem;margin-top:4px">${self._pName(id)}</div>
               </div>`;
             }).join('')}
           </div>
           <div class="ch-section-label" style="margin-top:0;text-align:center" data-lang="pick_winner"></div>
-          <div class="flex flex-col gap-2">
+          <div class="flex flex-col gap-2" style="margin-top:8px">
             ${players.map(function(id) {
-              return `<button class="ch-winner-btn" style="display:flex;align-items:center;gap:10px;padding:10px 16px"
-                onclick="PagePlay.pickWinnerEl(this)" data-winner='["${id}"]' data-players='${JSON.stringify(players)}'
+              return `<button class="ch-winner-btn"
+                style="display:flex;align-items:center;gap:10px;padding:10px 16px;width:100%;box-sizing:border-box"
+                onclick="PagePlay.pickWinnerEl(this)"
+                data-winner='["' + id + '"]'
+                data-players='${JSON.stringify(players)}'>
                 ${ui.avatar(self._pName(id), 'sm')}
                 <span style="font-weight:600">${self._pName(id)}</span>
               </button>`;
@@ -845,6 +867,37 @@ var PagePlay = {
       </div>`;
   },
 
+  // Helper untuk Singapore/Team: baca data dari data-attribute agar tidak ada quote conflict di onclick
+  pickWinnerEl: function(el) {
+    var winnerIds = JSON.parse(el.getAttribute('data-winner'));
+    var playerIds = JSON.parse(el.getAttribute('data-players'));
+    this.pickWinner(winnerIds, playerIds);
+  },
+
+  pickWinnerTeamEl: function(el) {
+    var team  = el.getAttribute('data-team');
+    var teamA = JSON.parse(el.getAttribute('data-ta'));
+    var teamB = JSON.parse(el.getAttribute('data-tb'));
+    this.pickWinnerTeam(team, teamA, teamB);
+  },
+
+  _renderHistory: function() {
+    if (!this._matchHistory || this._matchHistory.length === 0) return '';
+    var rows = this._matchHistory.map(function(m, i) {
+      var label = m.team ? m.team + ' (' + m.winners.join(', ') + ')' : m.winners.join(' & ');
+      return `<div class="flex items-center gap-2" style="padding:6px 0;border-bottom:1px solid var(--ch-border);font-size:0.82rem">
+        <span style="color:var(--ch-text-muted);min-width:18px">${i + 1}.</span>
+        <span>🏆</span>
+        <span style="font-weight:600">${label}</span>
+      </div>`;
+    }).join('');
+    return `
+      <div style="padding:0 16px 16px">
+        <div class="ch-section-label" data-lang="recent_matches"></div>
+        <div>${rows}</div>
+      </div>`;
+  },
+
   pickWinner: async function(winnerIds, playerIds) {
     var segId = this._segment.segment_id;
     ui.loading.show();
@@ -866,6 +919,11 @@ var PagePlay = {
       var wEloChange = after[winnerIds[0]] - before[winnerIds[0]];
       var sign = wEloChange >= 0 ? '+' : '';
       ui.toast.success('🏆 ' + wName + '  ' + sign + wEloChange + ' ELO');
+      var wNames = winnerIds.map(function(id) {
+        return this._players[id] ? this._players[id].player_name : id.substring(0,6);
+      }, this);
+      this._matchHistory.unshift({ winners: wNames });
+      if (this._matchHistory.length > 10) this._matchHistory.pop();
       this._renderPlay();
     } else {
       ui.toast.apiError(res.error && res.error.code);
@@ -890,7 +948,13 @@ var PagePlay = {
     if (res.success) {
       this._matchCount++;
       this._state = res.data.next_state;
-      ui.toast.success('🏆 ' + getLang('team_' + winnerTeam.toLowerCase()) + ' menang!');
+      var tName = getLang('team_' + winnerTeam.toLowerCase());
+      ui.toast.success('🏆 ' + tName + ' ' + getLang('winner_label'));
+      var wNames = winnerIds.map(function(id) {
+        return this._players[id] ? this._players[id].player_name : id.substring(0,6);
+      }, this);
+      this._matchHistory.unshift({ winners: wNames, team: tName });
+      if (this._matchHistory.length > 10) this._matchHistory.pop();
       this._renderPlay();
     } else {
       ui.toast.apiError(res.error && res.error.code);
