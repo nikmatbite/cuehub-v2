@@ -736,10 +736,10 @@ var PagePlay = {
           </div>
           <div class="ch-section-label" style="margin-top:0;text-align:center" data-lang="pick_winner"></div>
           <div class="flex gap-3">
-            <button class="ch-winner-btn" onclick="PagePlay.pickWinnerTeam('A', ${JSON.stringify(tA)}, ${JSON.stringify(tB)})">
+            <button class="ch-winner-btn" data-team="A" data-ta='${JSON.stringify(tA)}' data-tb='${JSON.stringify(tB)}' onclick="PagePlay.pickWinnerTeamEl(this)">
               <div style="font-weight:700" data-lang="team_a"></div>
             </button>
-            <button class="ch-winner-btn" onclick="PagePlay.pickWinnerTeam('B', ${JSON.stringify(tA)}, ${JSON.stringify(tB)})">
+            <button class="ch-winner-btn" data-team="B" data-ta='${JSON.stringify(tA)}' data-tb='${JSON.stringify(tB)}' onclick="PagePlay.pickWinnerTeamEl(this)">
               <div style="font-weight:700" data-lang="team_b"></div>
             </button>
           </div>
@@ -762,7 +762,7 @@ var PagePlay = {
           <div class="flex flex-col gap-2">
             ${players.map(function(id) {
               return `<button class="ch-winner-btn" style="display:flex;align-items:center;gap:10px;padding:10px 16px"
-                onclick="PagePlay.pickWinner(['${id}'], ${JSON.stringify(players)})">
+                onclick="PagePlay.pickWinnerEl(this)" data-winner='["${id}"]' data-players='${JSON.stringify(players)}'
                 ${ui.avatar(self._pName(id), 'sm')}
                 <span style="font-weight:600">${self._pName(id)}</span>
               </button>`;
@@ -895,6 +895,19 @@ var PagePlay = {
     } else {
       ui.toast.apiError(res.error && res.error.code);
     }
+  },
+
+  pickWinnerTeamEl: function(el) {
+    var team    = el.getAttribute('data-team');
+    var teamA   = JSON.parse(el.getAttribute('data-ta'));
+    var teamB   = JSON.parse(el.getAttribute('data-tb'));
+    this.pickWinnerTeam(team, teamA, teamB);
+  },
+
+  pickWinnerEl: function(el) {
+    var winnerIds = JSON.parse(el.getAttribute('data-winner'));
+    var playerIds = JSON.parse(el.getAttribute('data-players'));
+    this.pickWinner(winnerIds, playerIds);
   },
 
   doEndGame: function() {
