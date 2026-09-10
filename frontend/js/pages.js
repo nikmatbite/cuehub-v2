@@ -159,16 +159,18 @@ var PageDashboard = {
               <div class="flex items-center gap-2 mt-1">
                 ${segmentState && segmentState.state
                   ? `<span class="ch-mode-badge">${ui.modeIcon(segmentState.segment.game_mode)} ${ui.modeName(segmentState.segment.game_mode)}</span>`
-                  : ''}
+                  : `<span style="font-size:0.8rem;color:var(--ch-text-muted)" data-lang="no_active_game"></span>`}
               </div>
             </div>
             <div class="pulse-dot"></div>
           </div>
-          <div class="flex gap-2">
-            <button class="ch-btn ch-btn-primary" style="flex:1" onclick="router.go('play')">
-              <span>▶</span> <span data-lang="resume_session"></span>
+          <div class="flex flex-col gap-2">
+            <button class="ch-btn ch-btn-primary ch-btn-block" onclick="${segmentState && segmentState.state ? "router.go('play')" : "router.go('setup')"}">
+              <span>▶</span> <span data-lang="${segmentState && segmentState.state ? 'resume_session' : 'start_game'}"></span>
             </button>
-            <button class="ch-btn ch-btn-surface" onclick="router.go('setup')">＋</button>
+            <button class="ch-btn ch-btn-danger ch-btn-block" onclick="PageDashboard.endSession()">
+              <span data-lang="end_session"></span>
+            </button>
           </div>
         </div>`
       : `<div class="ch-card mb-3" style="text-align:center;padding:32px 20px">
@@ -222,6 +224,19 @@ var PageDashboard = {
     } else {
       ui.toast.apiError(res.error && res.error.code);
     }
+  },
+
+  endSession: function() {
+    ui.confirm(getLang('confirm_end_session'), async function() {
+      var sessionId = store.getSessionId();
+      if (sessionId) {
+        ui.loading.show();
+        await api.session.finish({ session_id: sessionId });
+        ui.loading.hide();
+      }
+      store.clearSession();
+      PageDashboard.render();
+    });
   }
 };
 
@@ -244,71 +259,52 @@ var PageSetup = {
     this._step = 1;
 
     this._renderStep();
-    applyLang();
+    },
+
+  // renderFromPlay() dipanggil saat "Akhiri Game" dari PagePlay
+  // Player dipertahankan, langsung ke Step 2
+  renderFromPlay: function(selectedIds) {
+    if (selectedIds && selectedIds.length) this._selected = selectedIds;
+    this._mode = null;
+    this._step = 2;
+    // Muat ulang player list agar data segar, tapi jangan reset seleksi
+    var self = this;
+    api.player.getAll().then(function(res) {
+      self._players = res.success ? res.data : [];
+      self._renderStep();
+    });
   },
 
   _renderStep: function() {
-    if (this._step === 1) this._renderModeStep();
-    else this._renderPlayerStep();
+    if (this._step === 1) this._renderPlayerStep();
+    else this._renderModeStep();
   },
 
-  _renderModeStep: function() {
-    var modes = [
-      { key: 'duel',          min: 2 },
-      { key: 'king_of_table', min: 3 },
-      { key: 'team_battle',   min: 4 },
-      { key: 'singapore',     min: 3 }
-    ];
-
-    var html = `
-      <div class="ch-page">
-        <div class="ch-page-header" style="position:relative;border:none;background:transparent">
-          <h2 class="ch-page-title" data-lang="select_mode"></h2>
-        </div>
-        <div class="flex flex-col gap-3 mt-2">
-          ${modes.map(function(m) {
-            return `<div class="ch-card" style="cursor:pointer;transition:all 0.15s" onclick="PageSetup.selectMode('${m.key}')" id="mode-${m.key}">
-              <div class="flex items-center gap-3">
-                <div style="font-size:2rem">${ui.modeIcon(m.key)}</div>
-                <div style="flex:1">
-                  <div style="font-weight:700;font-size:1rem">${ui.modeName(m.key)}</div>
-                  <div style="font-size:0.8rem;color:var(--ch-text-secondary);margin-top:2px">${getLang('mode_' + (m.key === 'king_of_table' ? 'king' : m.key === 'team_battle' ? 'team' : m.key) + '_desc')}</div>
-                  <div style="font-size:0.72rem;color:var(--ch-text-muted);margin-top:4px">Min. ${m.min} pemain</div>
-                </div>
-                <div style="color:var(--ch-text-muted)">›</div>
-              </div>
-            </div>`;
-          }).join('')}
-        </div>
-        <div class="mt-3">
-          <button class="ch-btn ch-btn-surface ch-btn-block" onclick="router.go('dashboard')">
-            ‹ <span data-lang="back"></span>
-          </button>
-        </div>
-      </div>`;
-    ui.render(html);
-    applyLang();
-  },
-
-  selectMode: function(mode) {
-    this._mode = mode;
-    this._step = 2;
-    this._renderPlayerStep();
-  },
-
+  // ── STEP 1: PILIH PLAYER ──────────────────────────────
   _renderPlayerStep: function() {
     var self = this;
-    var minMap = { duel: 2, king_of_table: 3, team_battle: 4, singapore: 3 };
-    var min = minMap[this._mode] || 2;
 
-    var playerList = this._players.length === 0
-      ? `<div class="ch-empty">
+    // Form tambah player inline (muncul kalau list kosong atau user klik "+")
+    var addFormHtml = `
+      <div class="ch-card mb-3" id="add-player-form" style="display:none">
+        <div style="font-weight:600;margin-bottom:12px">➕ <span data-lang="add_player"></span></div>
+        <div class="ch-form-group">
+          <input id="new-player-name" class="ch-input" type="text" data-lang-placeholder="player_name">
+        </div>
+        <div class="ch-form-group">
+          <input id="new-player-nick" class="ch-input" type="text" data-lang-placeholder="nickname_optional">
+        </div>
+        <div class="flex gap-2">
+          <button class="ch-btn ch-btn-surface" style="flex:1" onclick="PageSetup._hideAddForm()" data-lang="cancel"></button>
+          <button class="ch-btn ch-btn-primary" style="flex:1" onclick="PageSetup._submitAddPlayer()" data-lang="save"></button>
+        </div>
+      </div>`;
+
+    var playerListHtml = this._players.length === 0
+      ? `<div class="ch-empty" id="empty-state">
            <div class="ch-empty-icon">👥</div>
            <div class="ch-empty-title" data-lang="no_players"></div>
            <div class="ch-empty-desc" data-lang="add_first_player"></div>
-           <button class="ch-btn ch-btn-primary mt-4" onclick="router.go('players')">
-             <span data-lang="add_player"></span>
-           </button>
          </div>`
       : this._players.map(function(p) {
           var isSelected = self._selected.indexOf(p.player_id) !== -1;
@@ -318,7 +314,7 @@ var PageSetup = {
             ${ui.avatar(p.player_name, 'sm')}
             <div style="flex:1">
               <div style="font-weight:600;font-size:0.9rem">${p.player_name}</div>
-              <div style="font-size:0.75rem;color:var(--ch-text-muted)">${ui.eloBadge(p.elo)}</div>
+              <div style="font-size:0.75rem;color:var(--ch-text-muted)">${p.nickname ? p.nickname + ' · ' : ''}${ui.eloBadge(p.elo)}</div>
             </div>
             <div class="chip-check">${isSelected ? '✓' : ''}</div>
           </div>`;
@@ -326,39 +322,97 @@ var PageSetup = {
 
     var html = `
       <div class="ch-page">
-        <div class="flex items-center gap-3 mb-4">
-          <button class="ch-btn ch-btn-surface ch-btn-sm" onclick="PageSetup._step=1;PageSetup._renderModeStep()">‹</button>
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-1" style="padding-top:4px">
           <div>
-            <div style="font-size:0.75rem;color:var(--ch-text-muted)">${ui.modeIcon(this._mode)} ${ui.modeName(this._mode)}</div>
-            <h2 class="ch-page-title" style="font-size:1.2rem" data-lang="select_players"></h2>
+            <div style="font-size:0.75rem;color:var(--ch-text-muted)" data-lang="step_1_of_2"></div>
+            <h2 style="font-size:1.25rem;font-weight:700;margin:2px 0 0" data-lang="select_players"></h2>
           </div>
+          <button class="ch-btn ch-btn-surface ch-btn-sm" onclick="router.go('settings')">⚙</button>
         </div>
 
-        <div class="ch-search-wrap">
+        <!-- Stepper indicator -->
+        <div class="flex gap-2 mb-4 mt-2">
+          <div style="flex:1;height:3px;border-radius:2px;background:var(--ch-accent)"></div>
+          <div style="flex:1;height:3px;border-radius:2px;background:var(--ch-border)"></div>
+        </div>
+
+        <!-- Counter + tombol tambah -->
+        <div class="flex items-center justify-between mb-3">
+          <div style="font-size:0.82rem;color:var(--ch-text-muted)">
+            <span id="selected-count">${this._selected.length}</span> <span data-lang="selected_label"></span>
+            ${this._players.length > 0 ? '· ' + getLang('min_players_note', { n: 2 }) : ''}
+          </div>
+          <button class="ch-btn ch-btn-surface ch-btn-sm" onclick="PageSetup._showAddForm()">
+            ＋ <span data-lang="add_player"></span>
+          </button>
+        </div>
+
+        ${addFormHtml}
+
+        <!-- Search (hanya tampil kalau ada player) -->
+        ${this._players.length > 0 ? `
+        <div class="ch-search-wrap mb-3">
           <span class="search-icon">🔍</span>
           <input class="ch-input" id="player-search" type="text" data-lang-placeholder="search_player"
             oninput="PageSetup._filterChips(this.value)">
-        </div>
+        </div>` : ''}
 
-        <div style="font-size:0.8rem;color:var(--ch-text-muted);margin-bottom:12px">
-          <span id="selected-count">0</span>/${this._players.length} dipilih · min. ${min}
-        </div>
-
+        <!-- Player list -->
         <div class="flex flex-col gap-2" id="player-chip-list">
-          ${playerList}
+          ${playerListHtml}
         </div>
 
-        <div style="position:sticky;bottom:80px;margin-top:20px">
-          <button class="ch-btn ch-btn-primary ch-btn-block ch-btn-lg" id="btn-start-game"
-            onclick="PageSetup.startGame()" disabled>
-            <span data-lang="start_game"></span>
+        <!-- Actions -->
+        <div style="position:sticky;bottom:80px;margin-top:20px;display:flex;flex-direction:column;gap:8px">
+          <button class="ch-btn ch-btn-primary ch-btn-block ch-btn-lg" id="btn-next-mode"
+            onclick="PageSetup._goToModeStep()" ${this._selected.length < 2 ? 'disabled' : ''}>
+            <span data-lang="select_mode"></span> →
+          </button>
+          <button class="ch-btn ch-btn-danger ch-btn-block" onclick="PageSetup.endSession()">
+            <span data-lang="end_session"></span>
           </button>
         </div>
       </div>`;
 
     ui.render(html);
     applyLang();
-    this._updateStartBtn();
+  },
+
+  _showAddForm: function() {
+    var form = document.getElementById('add-player-form');
+    var empty = document.getElementById('empty-state');
+    if (form) form.style.display = '';
+    if (empty) empty.style.display = 'none';
+    var inp = document.getElementById('new-player-name');
+    if (inp) inp.focus();
+  },
+
+  _hideAddForm: function() {
+    var form = document.getElementById('add-player-form');
+    var empty = document.getElementById('empty-state');
+    if (form) form.style.display = 'none';
+    if (empty && this._players.length === 0) empty.style.display = '';
+  },
+
+  _submitAddPlayer: async function() {
+    var name = (document.getElementById('new-player-name').value || '').trim();
+    var nick = (document.getElementById('new-player-nick').value || '').trim();
+    if (!name) { ui.toast.warning(getLang('err_NAME_REQUIRED')); return; }
+
+    ui.loading.show();
+    var res = await api.player.create({ player_name: name, nickname: nick });
+    ui.loading.hide();
+
+    if (res.success) {
+      ui.toast.success(getLang('success'));
+      // Reload player list dan re-render step 1
+      var listRes = await api.player.getAll();
+      this._players = listRes.success ? listRes.data : [];
+      this._renderPlayerStep();
+    } else {
+      ui.toast.apiError(res.error && res.error.code);
+    }
   },
 
   togglePlayer: function(playerId) {
@@ -375,36 +429,128 @@ var PageSetup = {
       var check = chip.querySelector('.chip-check');
       if (check) check.textContent = idx === -1 ? '✓' : '';
     }
-    this._updateStartBtn();
-  },
 
-  _updateStartBtn: function() {
-    var minMap = { duel: 2, king_of_table: 3, team_battle: 4, singapore: 3 };
-    var min = minMap[this._mode] || 2;
-    var btn = document.getElementById('btn-start-game');
     var cnt = document.getElementById('selected-count');
     if (cnt) cnt.textContent = this._selected.length;
-    if (btn) btn.disabled = this._selected.length < min;
+    var btn = document.getElementById('btn-next-mode');
+    if (btn) btn.disabled = this._selected.length < 2;
   },
 
   _filterChips: function(query) {
     var q = query.toLowerCase();
     document.querySelectorAll('.ch-player-chip').forEach(function(chip) {
-      var name = chip.querySelector('[style*="font-weight"]');
-      if (name) {
-        chip.style.display = name.textContent.toLowerCase().includes(q) ? '' : 'none';
-      }
+      var name = chip.querySelector('[style*="font-weight:600"]');
+      if (name) chip.style.display = name.textContent.toLowerCase().includes(q) ? '' : 'none';
     });
   },
 
-  startGame: async function() {
+  _goToModeStep: function() {
+    if (this._selected.length < 2) return;
+    this._step = 2;
+    this._renderModeStep();
+  },
+
+  // ── STEP 2: PILIH MODE ───────────────────────────────
+  _renderModeStep: function() {
+    var self = this;
+    var count = this._selected.length;
+    var modes = [
+      { key: 'duel',          min: 2 },
+      { key: 'king_of_table', min: 3 },
+      { key: 'singapore',     min: 3 },
+      { key: 'team_battle',   min: 4 }
+    ];
+
+    var modeCards = modes.map(function(m) {
+      var disabled = count < m.min;
+      var descKey = m.key === 'king_of_table' ? 'king' : m.key === 'team_battle' ? 'team' : m.key;
+      return `<div class="ch-card ${disabled ? 'opacity-50' : ''}"
+        style="cursor:${disabled ? 'not-allowed' : 'pointer'};transition:all 0.15s;${disabled ? 'filter:grayscale(0.4)' : ''}"
+        onclick="${disabled ? '' : "PageSetup._startGame('" + m.key + "')"}" id="mode-${m.key}">
+        <div class="flex items-center gap-3">
+          <div style="font-size:2rem">${ui.modeIcon(m.key)}</div>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:1rem">${ui.modeName(m.key)}</div>
+            <div style="font-size:0.8rem;color:var(--ch-text-secondary);margin-top:2px">
+              ${getLang('mode_' + descKey + '_desc')}
+            </div>
+            <div style="font-size:0.72rem;margin-top:4px;color:${disabled ? 'var(--ch-danger)' : 'var(--ch-text-muted)'}">
+              ${disabled
+                ? '⚠ ' + getLang('min_players_note', { n: m.min })
+                : getLang('min_players_note', { n: m.min }) + ' · ' + count + ' ✓'}
+            </div>
+          </div>
+          ${disabled ? '' : '<div style="color:var(--ch-text-muted)">›</div>'}
+        </div>
+      </div>`;
+    }).join('');
+
+    var html = `
+      <div class="ch-page">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-1" style="padding-top:4px">
+          <div>
+            <div style="font-size:0.75rem;color:var(--ch-text-muted)" data-lang="step_2_of_2"></div>
+            <h2 style="font-size:1.25rem;font-weight:700;margin:2px 0 0" data-lang="select_mode"></h2>
+          </div>
+          <button class="ch-btn ch-btn-surface ch-btn-sm" onclick="router.go('settings')">⚙</button>
+        </div>
+
+        <!-- Stepper indicator -->
+        <div class="flex gap-2 mb-4 mt-2">
+          <div style="flex:1;height:3px;border-radius:2px;background:var(--ch-accent)"></div>
+          <div style="flex:1;height:3px;border-radius:2px;background:var(--ch-accent)"></div>
+        </div>
+
+        <!-- Info player terpilih -->
+        <div class="ch-card mb-3" style="padding:12px 16px;background:var(--ch-bg-elevated)">
+          <div style="font-size:0.78rem;color:var(--ch-text-muted);margin-bottom:6px">
+            👥 <span data-lang="selected_players"></span> (${count})
+          </div>
+          <div class="flex flex-wrap gap-2">
+            ${self._selected.map(function(id) {
+              var p = self._players.find(function(x) { return x.player_id === id; });
+              var name = p ? p.player_name : id.substring(0, 6);
+              return '<span style="font-size:0.8rem;background:var(--ch-bg-surface);border:1px solid var(--ch-border);border-radius:20px;padding:2px 10px">' + name + '</span>';
+            }).join('')}
+          </div>
+        </div>
+
+        <!-- Mode cards -->
+        <div class="flex flex-col gap-3">
+          ${modeCards}
+        </div>
+
+        <!-- Actions -->
+        <div style="position:sticky;bottom:80px;margin-top:20px;display:flex;flex-direction:column;gap:8px">
+          <button class="ch-btn ch-btn-surface ch-btn-block" onclick="PageSetup._backToPlayerStep()">
+            ‹ <span data-lang="select_players"></span>
+          </button>
+          <button class="ch-btn ch-btn-danger ch-btn-block" onclick="PageSetup.endSession()">
+            <span data-lang="end_session"></span>
+          </button>
+        </div>
+      </div>`;
+
+    ui.render(html);
+    applyLang();
+  },
+
+  _backToPlayerStep: function() {
+    this._step = 1;
+    // Player tetap, tidak di-reset
+    this._renderPlayerStep();
+  },
+
+  _startGame: async function(mode) {
+    this._mode = mode;
     var sessionId = store.getSessionId();
     if (!sessionId) { ui.toast.error(getLang('err_SESSION_NOT_FOUND')); return; }
 
     ui.loading.show();
     var res = await api.segment.start({
       session_id : sessionId,
-      game_mode  : this._mode,
+      game_mode  : mode,
       player_ids : this._selected
     });
     ui.loading.hide();
@@ -415,6 +561,19 @@ var PageSetup = {
     } else {
       ui.toast.apiError(res.error && res.error.code);
     }
+  },
+
+  endSession: function() {
+    ui.confirm(getLang('confirm_end_session'), async function() {
+      var sessionId = store.getSessionId();
+      if (sessionId) {
+        ui.loading.show();
+        await api.session.finish({ session_id: sessionId });
+        ui.loading.hide();
+      }
+      store.clearSession();
+      router.go('dashboard');
+    });
   }
 };
 
@@ -741,10 +900,17 @@ var PagePlay = {
   doEndGame: function() {
     var self = this;
     ui.confirm(getLang('confirm_end_game'), async function() {
+      ui.loading.show();
       var res = await api.segment.finish({ segment_id: self._segment.segment_id });
+      ui.loading.hide();
       if (res.success) {
         store.remove('active_segment_id');
-        router.go('setup');
+        // Kembali ke Step 2 (pilih mode) dengan player yang sama
+        // player_ids dari backend adalah JSON string, perlu di-parse
+        var rawIds = self._segment.player_ids || '[]';
+        var currentPlayerIds = typeof rawIds === 'string' ? JSON.parse(rawIds) : rawIds;
+        PageSetup.renderFromPlay(currentPlayerIds);
+        router.replace('setup');
       } else {
         ui.toast.apiError(res.error && res.error.code);
       }
@@ -1213,8 +1379,7 @@ var AppShell = {
       { key: 'dashboard', icon: '⚡', labelKey: 'nav_home' },
       { key: 'players',   icon: '👥', labelKey: 'nav_players' },
       { key: 'stats',     icon: '🏆', labelKey: 'leaderboard' },
-      { key: 'history',   icon: '📋', labelKey: 'nav_history' },
-      { key: 'settings',  icon: '⚙',  labelKey: 'nav_settings' }
+      { key: 'history',   icon: '📋', labelKey: 'nav_history' }
     ];
 
     var nav = document.getElementById('bottom-nav');
